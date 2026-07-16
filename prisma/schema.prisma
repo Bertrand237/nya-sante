@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,20 +7,454 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+/* ══════════════════════════════════════════════
+   MULTI-TENANT CORE
+   ══════════════════════════════════════════════ */
+
+model Hospital {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  logo        String?
+  address     String?
+  city        String?
+  country     String   @default("Cameroun")
+  phone       String?
+  email       String?
+  type        String   @default("hopital")
+  ownerName   String?
+  ownerPhone  String?
+  ownerEmail  String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  departments Department[]
+  roles       Role[]
+  staff       Staff[]
+  patients    Patient[]
+  appointments  Appointment[]
+  consultations Consultation[]
+  prescriptions Prescription[]
+  invoices    Invoice[]
+  payments    Payment[]
+  auditLogs   AuditLog[]
+  settings    HospitalSetting[]
+  medications Medication[]
+
+  @@index([slug])
+  @@index([country])
 }
 
-model Post {
-  id        String   @id @default(cuid())
-  title     String
-  content   String?
-  published Boolean  @default(false)
-  authorId  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model HospitalSetting {
+  id         String   @id @default(cuid())
+  hospitalId String
+  key        String
+  value      String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  hospital   Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
+  @@unique([hospitalId, key])
+  @@index([hospitalId])
+}
+
+/* ══════════════════════════════════════════════
+   DEPARTMENTS & SERVICES
+   ══════════════════════════════════════════════ */
+
+model Department {
+  id          String   @id @default(cuid())
+  hospitalId  String
+  name        String
+  description String?
+  type        String   @default("clinique")
+  headId      String?
+  color       String   @default("#047857")
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  hospital    Hospital   @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  head        Staff?     @relation("DepartmentHead", fields: [headId], references: [id])
+  staff       Staff[]
+  services    Service[]
+
+  @@index([hospitalId])
+}
+
+model Service {
+  id              String   @id @default(cuid())
+  departmentId    String
+  name            String
+  description     String?
+  consultationFee Float    @default(0)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  department      Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
+  @@index([departmentId])
+}
+
+/* ══════════════════════════════════════════════
+   ROLES & PERMISSIONS (RBAC)
+   ══════════════════════════════════════════════ */
+
+model Role {
+  id          String   @id @default(cuid())
+  hospitalId  String
+  name        String
+  label       String
+  description String?
+  permissions String
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  hospital    Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  staff       Staff[]
+
+  @@unique([hospitalId, name])
+  @@index([hospitalId])
+}
+
+/* ══════════════════════════════════════════════
+   STAFF / PERSONNEL
+   ══════════════════════════════════════════════ */
+
+model Staff {
+  id            String   @id @default(cuid())
+  hospitalId    String
+  departmentId  String?
+  roleId        String
+  firstName     String
+  lastName      String
+  email         String?
+  phone         String
+  dateOfBirth   DateTime?
+  gender        String   @default("M")
+  specialty     String?
+  licenseNumber String?
+  address       String?
+  salary        Float?
+  hireDate      DateTime @default(now())
+  isActive      Boolean  @default(true)
+  pin           String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  hospital         Hospital      @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  department       Department?   @relation(fields: [departmentId], references: [id])
+  role             Role          @relation(fields: [roleId], references: [id])
+  consultations    Consultation[]
+  prescriptions    Prescription[]
+  appointments     Appointment[]
+  headOfDepartments Department[] @relation("DepartmentHead")
+  auditLogs        AuditLog[]
+
+  @@index([hospitalId])
+  @@index([departmentId])
+  @@index([phone])
+}
+
+/* ══════════════════════════════════════════════
+   PATIENTS
+   ══════════════════════════════════════════════ */
+
+model Patient {
+  id                String   @id @default(cuid())
+  hospitalId        String
+  folderNumber      String
+  firstName         String
+  lastName          String
+  dateOfBirth       DateTime?
+  gender            String   @default("M")
+  phone             String
+  email             String?
+  address           String?
+  city              String?
+  bloodType         String?
+  allergies         String?
+  medicalHistory    String?
+  emergencyContact  String?
+  emergencyPhone    String?
+  insuranceProvider String?
+  insuranceNumber   String?
+  qrCodeData        String?
+  photo             String?
+  notes             String?
+  isAlive           Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  hospital      Hospital        @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  appointments  Appointment[]
+  consultations Consultation[]
+  prescriptions Prescription[]
+  invoices      Invoice[]
+  vitals        VitalSign[]
+
+  @@unique([hospitalId, folderNumber])
+  @@index([hospitalId])
+  @@index([phone])
+  @@index([lastName])
+}
+
+/* ══════════════════════════════════════════════
+   VITAL SIGNS
+   ══════════════════════════════════════════════ */
+
+model VitalSign {
+  id                     String   @id @default(cuid())
+  patientId              String
+  staffId                String?
+  weight                 Float?
+  height                 Float?
+  temperature            Float?
+  bloodPressureSystolic  Int?
+  bloodPressureDiastolic Int?
+  heartRate              Int?
+  respiratoryRate        Int?
+  oxygenSaturation       Int?
+  notes                  String?
+  createdAt              DateTime @default(now())
+
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([patientId])
+}
+
+/* ══════════════════════════════════════════════
+   APPOINTMENTS
+   ══════════════════════════════════════════════ */
+
+model Appointment {
+  id            String   @id @default(cuid())
+  hospitalId    String
+  patientId     String
+  staffId       String
+  departmentId  String?
+  date          DateTime
+  duration      Int      @default(30)
+  status        String   @default("en_attente")
+  type          String   @default("consultation")
+  reason        String?
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  hospital      Hospital      @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  patient       Patient       @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  staff         Staff         @relation(fields: [staffId], references: [id])
+
+  @@index([hospitalId])
+  @@index([patientId])
+  @@index([staffId])
+  @@index([date])
+  @@index([status])
+}
+
+/* ══════════════════════════════════════════════
+   CONSULTATIONS
+   ══════════════════════════════════════════════ */
+
+model Consultation {
+  id                       String   @id @default(cuid())
+  hospitalId               String
+  patientId                String
+  staffId                  String
+  appointmentId            String?
+  departmentId             String?
+  type                     String   @default("premiere_consultation")
+  chiefComplaint           String?
+  historyOfPresentIllness  String?
+  pastMedicalHistory       String?
+  physicalExam             String?
+  diagnosis                String?
+  plan                     String?
+  notes                    String?
+  status                   String   @default("en_cours")
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  hospital      Hospital      @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  patient       Patient       @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  staff         Staff         @relation(fields: [staffId], references: [id])
+  prescriptions Prescription[]
+
+  @@index([hospitalId])
+  @@index([patientId])
+  @@index([staffId])
+  @@index([createdAt])
+}
+
+/* ══════════════════════════════════════════════
+   PRESCRIPTIONS
+   ══════════════════════════════════════════════ */
+
+model Prescription {
+  id             String   @id @default(cuid())
+  hospitalId     String
+  consultationId String
+  patientId      String
+  staffId        String
+  notes          String?
+  status         String   @default("active")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  hospital      Hospital          @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  consultation  Consultation      @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+  patient       Patient           @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  staff         Staff             @relation(fields: [staffId], references: [id])
+  items         PrescriptionItem[]
+
+  @@index([hospitalId])
+  @@index([patientId])
+  @@index([consultationId])
+}
+
+model PrescriptionItem {
+  id              String   @id @default(cuid())
+  prescriptionId  String
+  medicationName  String
+  dosage          String
+  frequency       String
+  duration        String
+  instructions    String?
+  quantity        Int?
+  createdAt       DateTime @default(now())
+
+  prescription Prescription @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
+
+  @@index([prescriptionId])
+}
+
+/* ══════════════════════════════════════════════
+   BILLING
+   ══════════════════════════════════════════════ */
+
+model Invoice {
+  id             String   @id @default(cuid())
+  hospitalId     String
+  patientId      String
+  consultationId String?
+  invoiceNumber  String
+  amount         Float
+  discount       Float    @default(0)
+  totalAmount    Float
+  paidAmount     Float    @default(0)
+  status         String   @default("impayee")
+  paymentMethod  String?
+  paymentProvider String?
+  notes          String?
+  dueDate        DateTime?
+  paidAt         DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  hospital      Hospital      @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  patient       Patient       @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  payments      Payment[]
+  items         InvoiceItem[]
+
+  @@unique([hospitalId, invoiceNumber])
+  @@index([hospitalId])
+  @@index([patientId])
+  @@index([status])
+}
+
+model InvoiceItem {
+  id          String   @id @default(cuid())
+  invoiceId   String
+  label       String
+  description String?
+  quantity    Int
+  unitPrice   Float
+  total       Float
+  createdAt   DateTime @default(now())
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+}
+
+model Payment {
+  id            String   @id @default(cuid())
+  hospitalId    String
+  invoiceId     String
+  amount        Float
+  method        String
+  provider      String?
+  reference     String?
+  phone         String?
+  status        String   @default("reussi")
+  receivedBy    String?
+  createdAt     DateTime @default(now())
+
+  hospital Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  invoice  Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([hospitalId])
+  @@index([invoiceId])
+  @@index([createdAt])
+}
+
+/* ══════════════════════════════════════════════
+   INVENTORY / PHARMACIE
+   ══════════════════════════════════════════════ */
+
+model Medication {
+  id            String   @id @default(cuid())
+  hospitalId    String
+  name          String
+  genericName   String?
+  category      String?
+  form          String?
+  dosageForm    String?
+  unit          String   @default("unite")
+  stockQuantity Int      @default(0)
+  minStockAlert Int      @default(10)
+  unitPrice     Float
+  salePrice     Float
+  supplier      String?
+  batchNumber   String?
+  expiryDate    DateTime?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  hospital Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
+  @@index([hospitalId])
+  @@index([name])
+}
+
+/* ══════════════════════════════════════════════
+   AUDIT LOG
+   ══════════════════════════════════════════════ */
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  hospitalId  String
+  staffId     String?
+  action      String
+  entity      String
+  entityId    String?
+  details     String?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+
+  hospital Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  staff    Staff?   @relation(fields: [staffId], references: [id])
+
+  @@index([hospitalId])
+  @@index([staffId])
+  @@index([action])
+  @@index([createdAt])
 }

@@ -1,0 +1,1713 @@
+     1→'use client'
+     2→
+     3→import { useState } from 'react'
+     4→import Image from 'next/image'
+     5→import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+     6→import { Badge } from '@/components/ui/badge'
+     7→import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+     8→import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
+     9→import { Separator } from '@/components/ui/separator'
+    10→import { Progress } from '@/components/ui/progress'
+    11→import {
+    12→  Eye, BookOpen, Server, Building2, Layers, Smartphone,
+    13→  Globe, Shield, CalendarDays, DollarSign, Heart, Users,
+    14→  Activity, WifiOff, Database, Cloud, Lock, Bell, FileText,
+    15→  Stethoscope, Pill, Microscope, Baby, Clock, MessageSquare,
+    16→  BarChart3, UserCog, Package, CreditCard, Calendar,
+    17→  AlertTriangle, CheckCircle2, XCircle, ArrowRight, Star,
+    18→  Target, Zap, TrendingUp, MapPin, Languages, Receipt,
+    19→  Settings, Workflow, HardDrive, Radio, RefreshCw,
+    20→  Download, Upload, ChevronRight, BedDouble, Scissors
+    21→} from 'lucide-react'
+    22→
+    23→/* ─────────────────────────────────────────────
+    24→   HERO SECTION
+    25→   ───────────────────────────────────────────── */
+    26→function HeroSection() {
+    27→  return (
+    28→    <header className="relative overflow-hidden">
+    29→      {/* Background image with overlay */}
+    30→      <div className="absolute inset-0">
+    31→        <Image
+    32→          src="/nya-hero.png"
+    33→          alt="NYA Santé - Plateforme de Santé pour l'Afrique"
+    34→          fill
+    35→          className="object-cover"
+    36→          priority
+    37→        />
+    38→        <div className="absolute inset-0 nya-hero-overlay" />
+    39→      </div>
+    40→
+    41→      {/* Content */}
+    42→      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 lg:py-32">
+    43→        <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-12">
+    44→          <div className="flex-1 text-center lg:text-left">
+    45→            <div className="flex items-center justify-center lg:justify-start gap-3 mb-6">
+    46→              <Image src="/nya-logo.png" alt="NYA Santé" width={56} height={56} className="rounded-xl" />
+    47→              <span className="text-white/80 text-lg font-medium tracking-wider uppercase">Cahier de Charges</span>
+    48→            </div>
+    49→            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight mb-6">
+    50→              NYA <span className="text-amber-300">Santé</span>
+    51→            </h1>
+    52→            <p className="text-lg sm:text-xl text-white/90 max-w-2xl mb-8 leading-relaxed">
+    53→              Plateforme de gestion hospitalière nouvelle génération, conçue spécifiquement pour l&apos;Afrique.
+    54→              Meilleure que les solutions américaines et européennes, avec un fonctionnement
+    55→              <span className="text-amber-300 font-semibold"> 100% offline</span>.
+    56→            </p>
+    57→            <div className="flex flex-wrap gap-3 justify-center lg:justify-start">
+    58→              <Badge className="bg-white/15 text-white border-white/20 hover:bg-white/25 px-4 py-2 text-sm">
+    59→                <WifiOff className="w-4 h-4 mr-2" /> Offline-First
+    60→              </Badge>
+    61→              <Badge className="bg-white/15 text-white border-white/20 hover:bg-white/25 px-4 py-2 text-sm">
+    62→                <Smartphone className="w-4 h-4 mr-2" /> Android Natif
+    63→              </Badge>
+    64→              <Badge className="bg-white/15 text-white border-white/20 hover:bg-white/25 px-4 py-2 text-sm">
+    65→                <Building2 className="w-4 h-4 mr-2" /> Multi-Tenant
+    66→              </Badge>
+    67→              <Badge className="bg-white/15 text-white border-white/20 hover:bg-white/25 px-4 py-2 text-sm">
+    68→                <Globe className="w-4 h-4 mr-2" /> Adapté Afrique
+    69→              </Badge>
+    70→            </div>
+    71→          </div>
+    72→
+    73→          {/* Quick Stats */}
+    74→          <div className="grid grid-cols-2 gap-4 w-full max-w-md">
+    75→            {[
+    76→              { value: '16+', label: 'Modules Fonctionnels', icon: Layers },
+    77→              { value: '3', label: 'Apps Android', icon: Smartphone },
+    78→              { value: '100%', label: 'Fonctionnement Offline', icon: WifiOff },
+    79→              { value: '54', label: 'Pays Africains Ciblés', icon: MapPin },
+    80→            ].map((stat, i) => (
+    81→              <Card key={i} className="bg-white/10 backdrop-blur-sm border-white/20 text-white">
+    82→                <CardContent className="p-4 text-center">
+    83→                  <stat.icon className="w-6 h-6 mx-auto mb-2 text-amber-300" />
+    84→                  <div className="text-2xl font-bold">{stat.value}</div>
+    85→                  <div className="text-xs text-white/70 mt-1">{stat.label}</div>
+    86→                </CardContent>
+    87→              </Card>
+    88→            ))}
+    89→          </div>
+    90→        </div>
+    91→      </div>
+    92→    </header>
+    93→  )
+    94→}
+    95→
+    96→/* ─────────────────────────────────────────────
+    97→   SHARED UI COMPONENTS
+    98→   ───────────────────────────────────────────── */
+    99→function SectionTitle({ icon: Icon, title, subtitle }: { icon: React.ElementType; title: string; subtitle?: string }) {
+   100→  return (
+   101→    <div className="mb-8">
+   102→      <div className="flex items-center gap-3 mb-2">
+   103→        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+   104→          <Icon className="w-5 h-5 text-primary" />
+   105→        </div>
+   106→        <h2 className="text-2xl sm:text-3xl font-bold">{title}</h2>
+   107→      </div>
+   108→      {subtitle && <p className="text-muted-foreground ml-13">{subtitle}</p>}
+   109→      <Separator className="mt-4" />
+   110→    </div>
+   111→  )
+   112→}
+   113→
+   114→function SubTitle({ title, id }: { title: string; id?: string }) {
+   115→  return (
+   116→    <h3 id={id} className="text-xl font-semibold mt-8 mb-4 flex items-center gap-2">
+   117→      <ChevronRight className="w-4 h-4 text-primary" />
+   118→      {title}
+   119→    </h3>
+   120→  )
+   121→}
+   122→
+   123→function FeatureCard({ icon: Icon, title, description, tags, status }: {
+   124→  icon: React.ElementType; title: string; description: string;
+   125→  tags?: string[]; status?: 'critical' | 'high' | 'medium' | 'optional'
+   126→}) {
+   127→  const statusConfig = {
+   128→    critical: { label: 'Critique', color: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' },
+   129→    high: { label: 'Priorité Haute', color: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400' },
+   130→    medium: { label: 'Moyenne', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' },
+   131→    optional: { label: 'Optionnel', color: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400' },
+   132→  }
+   133→  return (
+   134→    <Card className="group hover:shadow-md transition-shadow">
+   135→      <CardHeader className="pb-3">
+   136→        <div className="flex items-start justify-between">
+   137→          <div className="flex items-center gap-3">
+   138→            <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/15 transition-colors">
+   139→              <Icon className="w-4.5 h-4.5 text-primary" />
+   140→            </div>
+   141→            <CardTitle className="text-base">{title}</CardTitle>
+   142→          </div>
+   143→          {status && (
+   144→            <Badge variant="outline" className={`text-xs ${statusConfig[status].color} border-0`}>
+   145→              {statusConfig[status].label}
+   146→            </Badge>
+   147→          )}
+   148→        </div>
+   149→      </CardHeader>
+   150→      <CardContent>
+   151→        <p className="text-sm text-muted-foreground leading-relaxed mb-3">{description}</p>
+   152→        {tags && tags.length > 0 && (
+   153→          <div className="flex flex-wrap gap-1.5">
+   154→            {tags.map((tag, i) => (
+   155→              <Badge key={i} variant="secondary" className="text-xs font-normal">{tag}</Badge>
+   156→            ))}
+   157→          </div>
+   158→        )}
+   159→      </CardContent>
+   160→    </Card>
+   161→  )
+   162→}
+   163→
+   164→function SpecTable({ headers, rows }: { headers: string[]; rows: string[][] }) {
+   165→  return (
+   166→    <div className="overflow-x-auto rounded-lg border">
+   167→      <table className="w-full text-sm">
+   168→        <thead>
+   169→          <tr className="bg-muted/50">
+   170→            {headers.map((h, i) => (
+   171→              <th key={i} className="px-4 py-3 text-left font-semibold border-b">{h}</th>
+   172→            ))}
+   173→          </tr>
+   174→        </thead>
+   175→        <tbody>
+   176→          {rows.map((row, i) => (
+   177→            <tr key={i} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
+   178→              {row.map((cell, j) => (
+   179→                <td key={j} className="px-4 py-3">{cell}</td>
+   180→              ))}
+   181→            </tr>
+   182→          ))}
+   183→        </tbody>
+   184→      </table>
+   185→    </div>
+   186→  )
+   187→}
+   188→
+   189→function PhaseCard({ phase, title, duration, progress, items }: {
+   190→  phase: string; title: string; duration: string; progress: number; items: string[]
+   191→}) {
+   192→  return (
+   193→    <Card>
+   194→      <CardHeader>
+   195→        <div className="flex items-center justify-between mb-2">
+   196→          <Badge className="bg-primary text-primary-foreground">{phase}</Badge>
+   197→          <span className="text-sm text-muted-foreground">{duration}</span>
+   198→        </div>
+   199→        <CardTitle>{title}</CardTitle>
+   200→        <Progress value={progress} className="mt-3 h-2" />
+   201→      </CardHeader>
+   202→      <CardContent>
+   203→        <ul className="space-y-2">
+   204→          {items.map((item, i) => (
+   205→            <li key={i} className="flex items-start gap-2 text-sm">
+   206→              <CheckCircle2 className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+   207→              <span>{item}</span>
+   208→            </li>
+   209→          ))}
+   210→        </ul>
+   211→      </CardContent>
+   212→    </Card>
+   213→  )
+   214→}
+   215→
+   216→/* ─────────────────────────────────────────────
+   217→   TAB 1: VUE D'ENSEMBLE
+   218→   ───────────────────────────────────────────── */
+   219→function SectionVueEnsemble() {
+   220→  return (
+   221→    <div className="space-y-6">
+   222→      <SectionTitle icon={Eye} title="Vue d'Ensemble" subtitle="Présentation complète du projet NYA Santé" />
+   223→
+   224→      {/* Problématique */}
+   225→      <SubTitle title="1.1 Problématique" />
+   226→      <Card className="border-l-4 border-l-red-500">
+   227→        <CardContent className="pt-6">
+   228→          <p className="text-muted-foreground leading-relaxed mb-4">
+   229→            L&apos;Afrique fait face à un défi sanitaire majeur : la majorité des hôpitaux et cliniques
+   230→            fonctionnent encore avec des <strong className="text-foreground">dossiers papier</strong>, des
+   231→            <strong className="text-foreground"> processus manuels</strong> et des systèmes d&apos;information
+   232→            fragmentés. Les solutions américaines et européennes (Epic, Cerner, Meditech) sont conçues pour des
+   233→            environnements avec connectivité permanente, des infrastructures IT solides et des budgets importants.
+   234→          </p>
+   235→          <div className="grid sm:grid-cols-2 gap-4 mt-6">
+   236→            {[
+   237→              { stat: '60%', desc: "des hôpitaux africains n'ont pas de système d'information" },
+   238→              { stat: '75%', desc: 'de la population africaine n\'a pas d\'accès à l\'internet fiable' },
+   239→              { stat: '45%', desc: "des pertes de données médicales dues au papier" },
+   240→              { stat: '30%', desc: "d'erreurs médicamenteuses liées à la documentation manuelle" },
+   241→            ].map((item, i) => (
+   242→              <div key={i} className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
+   243→                <span className="text-2xl font-bold text-red-600">{item.stat}</span>
+   244→                <span className="text-sm text-muted-foreground">{item.desc}</span>
+   245→              </div>
+   246→            ))}
+   247→          </div>
+   248→        </CardContent>
+   249→      </Card>
+   250→
+   251→      {/* Vision */}
+   252→      <SubTitle title="1.2 Vision et Mission" />
+   253→      <div className="grid sm:grid-cols-2 gap-6">
+   254→        <Card className="nya-gradient text-white">
+   255→          <CardHeader>
+   256→            <CardTitle className="text-white flex items-center gap-2">
+   257→              <Target className="w-5 h-5" /> Vision
+   258→            </CardTitle>
+   259→          </CardHeader>
+   260→          <CardContent>
+   261→            <p className="text-white/90 leading-relaxed">
+   262→              Devenir la plateforme de référence pour la gestion hospitalière en Afrique,
+   263→              en offrant une solution qui dépasse les standards occidentaux par son adaptation
+   264→              aux réalités africaines : fonctionnement offline, accessibilité mobile, multilinguisme
+   265→              et intégration des systèmes de paiement locaux.
+   266→            </p>
+   267→          </CardContent>
+   268→        </Card>
+   269→        <Card className="border-2 border-amber-300">
+   270→          <CardHeader>
+   271→            <CardTitle className="flex items-center gap-2 text-amber-700">
+   272→              <Zap className="w-5 h-5" /> Mission
+   273→            </CardTitle>
+   274→          </CardHeader>
+   275→          <CardContent>
+   276→            <p className="text-muted-foreground leading-relaxed">
+   277→              Démocratiser l&apos;accès à la santé numérique en Afrique en fournissant un système
+   278→              de gestion hospitalière complet, abordable et fonctionnant sans connexion internet
+   279→              permanente. Chaque propriétaire d&apos;hôpital doit pouvoir configurer son établissement
+   280→              de manière autonome, créer ses départements et gérer son équipe.
+   281→            </p>
+   282→          </CardContent>
+   283→        </Card>
+   284→      </div>
+   285→
+   286→      {/* Objectifs Stratégiques */}
+   287→      <SubTitle title="1.3 Objectifs Stratégiques" />
+   288→      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+   289→        {[
+   290→          { icon: WifiOff, title: 'Offline-First', desc: 'Fonctionnement complet sans connexion internet, synchronisation automatique quand la connexion revient.' },
+   291→          { icon: Smartphone, title: 'Mobile-First', desc: 'Applications Android natives pour patients, médecins, infirmiers, laborantins et administrateurs.' },
+   292→          { icon: Building2, title: 'Multi-Établissement', desc: 'Chaque propriétaire gère son hôpital de manière indépendante avec ses propres départements.' },
+   293→          { icon: DollarSign, title: 'Mobile Money', desc: 'Intégration native MTN Mobile Money, Orange Money, M-Pesa et tous les systèmes de paiement locaux.' },
+   294→          { icon: Languages, title: 'Multilingue', desc: 'Français, Anglais, Arabe, Swahili, Wolof, Lingala + support de langues locales personnalisables.' },
+   295→          { icon: Shield, title: 'Conformité', desc: 'Conforme aux réglementations africaines (OHADA, CEDEAO, UA) et standards internationaux (HL7 FHIR).' },
+   296→        ].map((item, i) => (
+   297→          <FeatureCard key={i} {...item} />
+   298→        ))}
+   299→      </div>
+   300→
+   301→      {/* Public Cible */}
+   302→      <SubTitle title="1.4 Public Cible et Utilisateurs" />
+   303→      <Card>
+   304→        <CardContent className="pt-6">
+   305→          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+   306→            {[
+   307→              { icon: Heart, title: 'Patients', desc: 'Prise de rendez-vous, consultations à distance, historique médical, notifications SMS.', count: '~1.4 milliard' },
+   308→              { icon: Stethoscope, title: 'Médecins', desc: 'Dossiers patients, ordonnances, résultats labo, gestion des consultations.', count: '~300 000' },
+   309→              { icon: UserCog, title: 'Administrateurs', desc: 'Configuration hôpital, départements, RH, facturation, rapports, analytics.', count: '~50 000' },
+   310→              { icon: Building2, title: 'Propriétaires', desc: 'Gestion multi-établissements, dashboard stratégique, contrôle total.', count: '~20 000' },
+   311→            ].map((user, i) => (
+   312→              <div key={i} className="text-center p-4 rounded-xl bg-muted/50">
+   313→                <user.icon className="w-8 h-8 mx-auto mb-3 text-primary" />
+   314→                <h4 className="font-semibold mb-1">{user.title}</h4>
+   315→                <p className="text-xs text-muted-foreground mb-2">{user.desc}</p>
+   316→                <Badge variant="outline" className="text-xs">{user.count}</Badge>
+   317→              </div>
+   318→            ))}
+   319→          </div>
+   320→        </CardContent>
+   321→      </Card>
+   322→    </div>
+   323→  )
+   324→}
+   325→
+   326→/* ─────────────────────────────────────────────
+   327→   TAB 2: ANALYSE DE MARCHÉ
+   328→   ───────────────────────────────────────────── */
+   329→function SectionMarche() {
+   330→  return (
+   331→    <div className="space-y-6">
+   332→      <SectionTitle icon={BookOpen} title="Analyse de Marché" subtitle="Étude comparative et positionnement stratégique" />
+   333→
+   334→      <SubTitle title="2.1 Solutions Existantes (US / EU)" />
+   335→      <p className="text-muted-foreground mb-4">Analyse des principales solutions hospitalières occidentales et leurs limitations en contexte africain :</p>
+   336→      <SpecTable
+   337→        headers={['Solution', 'Origine', 'Prix/an', 'Offline', 'Mobile', 'Mobile Money', 'Langues AF']}
+   338→        rows={[
+   339→          ['Epic Systems', '🇺🇸 USA', '$1M - $5M', '❌ Non', 'Web only', '❌ Non', '❌ Non'],
+   340→          ['Cerner (Oracle)', '🇺🇸 USA', '$500K - $2M', '❌ Non', 'Limité', '❌ Non', '❌ Non'],
+   341→          ['Meditech', '🇺🇸 USA', '$200K - $1M', '⚠️ Partiel', 'Limité', '❌ Non', '❌ Non'],
+   342→          ['Dedalus (ex-CGI)', '🇮🇹 EU', '$100K - $500K', '❌ Non', 'Web only', '❌ Non', '⚠️ 3-4 langues'],
+   343→          ['Infor (Liferay)', '🇺🇸 USA', '$150K - $700K', '❌ Non', 'Web only', '❌ Non', '❌ Non'],
+   344→          ['OpenMRS', '🌍 Open Source', 'Gratuit*', '⚠️ Partiel', '⚠️ Basique', '❌ Non', '⚠️ Anglais'],
+   345→          ['NYA Santé', '🌍 Afrique', '$500 - $5 000', '✅ Oui', '✅ Natif', '✅ Oui', '✅ 10+ langues'],
+   346→        ]}
+   347→      />
+   348→
+   349→      <div className="p-4 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+   350→        <p className="text-sm text-amber-800 dark:text-amber-300">
+   351→          <strong>*OpenMRS</strong> est gratuit mais nécessite une expertise technique avancée pour le déploiement et la maintenance.
+   352→          Pas d&apos;application mobile native, pas de support Mobile Money, et la synchronisation offline est expérimentale.
+   353→        </p>
+   354→      </div>
+   355→
+   356→      <SubTitle title="2.2 Pourquoi NYA Santé est Meilleur" />
+   357→      <div className="grid sm:grid-cols-2 gap-4">
+   358→        {[
+   359→          { title: 'Vrai Offline-First', icon: WifiOff, desc: "Contrairement aux solutions US/EU qui nécessitent une connexion permanente, NYA Santé fonctionne à 100% hors-ligne. Toutes les opérations critiques (consultations, prescriptions, labo) sont disponibles sans internet.", status: 'critical' as const },
+   360→          { title: 'Mobile Natif Android', icon: Smartphone, desc: "Les solutions US/EU sont conçues pour desktop. NYA Santé offre des applications Android natives optimisées pour les smartphones courants en Afrique (même avec 2Go de RAM).", status: 'critical' as const },
+   361→          { title: 'Multi-Tenant Autonome', icon: Building2, desc: "Chaque propriétaire d'hôpital configure son établissement indépendamment. Pas besoin d'un intégrateur externe pour créer des départements, des services ou des rôles.", status: 'critical' as const },
+   362→          { title: 'Mobile Money Intégré', icon: CreditCard, desc: "Intégration native avec MTN Mobile Money, Orange Money, M-Pesa, Wave et tous les systèmes de paiement mobile africains. Les solutions US ne supportent que les cartes bancaires.", status: 'high' as const },
+   363→          { title: 'Multilinguisme Africain', icon: Languages, desc: "Interface en Français, Anglais, Arabe, Swahili, Wolof, Bambara, Lingala, Hausa, Amharique et toute langue configurable par l'utilisateur.", status: 'high' as const },
+   364→          { title: 'Prix Accessible', icon: DollarSign, desc: "Prix adapté aux réalités économiques africaines. De $500/an pour une petite clinique à $5 000/an pour un grand hôpital, contre $200K+ pour les solutions US.", status: 'high' as const },
+   365→          { title: 'Bande Passante Minimale', icon: Radio, desc: "Optimisé pour fonctionner sur des réseaux 2G/3G avec moins de 1 Mo de données par synchronisation. Les solutions US/EU consomment des Mo par page.", status: 'high' as const },
+   366→          { title: 'Notifications SMS', icon: MessageSquare, desc: "Rappels de rendez-vous, résultats de labo et alertes via SMS (pas besoin de smartphone ni d'internet). Inclus dans le prix.", status: 'medium' as const },
+   367→        ].map((item, i) => (
+   368→          <FeatureCard key={i} {...item} />
+   369→        ))}
+   370→      </div>
+   371→
+   372→      <SubTitle title="2.3 Marché Cible et Opportunité" />
+   373→      <div className="grid sm:grid-cols-3 gap-4">
+   374→        <Card className="text-center">
+   375→          <CardContent className="pt-6">
+   376→            <TrendingUp className="w-10 h-10 mx-auto mb-3 text-primary" />
+   377→            <div className="text-3xl font-bold text-primary">$4.2 Milliards</div>
+   378→            <p className="text-sm text-muted-foreground mt-1">Marché HIS Afrique en 2027</p>
+   379→          </CardContent>
+   380→        </Card>
+   381→        <Card className="text-center">
+   382→          <CardContent className="pt-6">
+   383→            <Activity className="w-10 h-10 mx-auto mb-3 text-amber-600" />
+   384→            <div className="text-3xl font-bold text-amber-600">18.5%</div>
+   385→            <p className="text-sm text-muted-foreground mt-1">TCAC de croissance annuel</p>
+   386→          </CardContent>
+   387→        </Card>
+   388→        <Card className="text-center">
+   389→          <CardContent className="pt-6">
+   390→            <MapPin className="w-10 h-10 mx-auto mb-3 text-emerald-600" />
+   391→            <div className="text-3xl font-bold text-emerald-600">12 000+</div>
+   392→            <p className="text-sm text-muted-foreground mt-1">Hôpitaux et cliniques ciblés en Phase 1</p>
+   393→          </CardContent>
+   394→        </Card>
+   395→      </div>
+   396→    </div>
+   397→  )
+   398→}
+   399→
+   400→/* ─────────────────────────────────────────────
+   401→   TAB 3: ARCHITECTURE TECHNIQUE
+   402→   ───────────────────────────────────────────── */
+   403→function SectionArchitecture() {
+   404→  return (
+   405→    <div className="space-y-6">
+   406→      <SectionTitle icon={Server} title="Architecture Technique" subtitle="Architecture Offline-First, scalable et sécurisée" />
+   407→
+   408→      <SubTitle title="3.1 Architecture Globale" />
+   409→      <Card>
+   410→        <CardContent className="pt-6">
+   411→          <div className="bg-muted/50 rounded-xl p-6 font-mono text-sm overflow-x-auto">
+   412→            <pre className="text-foreground/80 leading-relaxed">{`
+   413→┌─────────────────────────────────────────────────────────────────┐
+   414→│                    COUCHE APPLICATION                            │
+   415→│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────────┐   │
+   416→│  │  App      │  │  App      │  │  App      │  │  Dashboard   │   │
+   417→│  │  Patient  │  │  Médical  │  │  Admin    │  │  Web Admin   │   │
+   418→│  │  Android  │  │  Android  │  │  Android  │  │  (Next.js)   │   │
+   419→│  └────┬─────┘  └────┬─────┘  └────┬─────┘  └──────┬───────┘   │
+   420→│       │              │              │                │           │
+   421→│  ┌────┴──────────────┴──────────────┴────────────────┴──────┐  │
+   422→│  │              COUCHE SYNCHRONISATION (Sync Engine)         │  │
+   423→│  │   ┌──────────────┐  ┌──────────────┐  ┌──────────────┐   │  │
+   424→│  │   │  Local DB     │  │  Conflict    │  │  Delta Sync  │   │  │
+   425→│  │   │  (SQLite)     │  │  Resolution  │  │  Protocol    │   │  │
+   426→│  │   └──────┬───────┘  └──────────────┘  └──────┬───────┘   │  │
+   427→│  └─────────┼──────────────────────────────────────┼──────────┘  │
+   428→│            │              ▲                     │             │
+   429→│            │              │ Sync (quand          │             │
+   430→│            │              │ connecté)           │             │
+   431→│            ▼              │                     ▼             │
+   432→│  ┌────────────────────────┴───────────────────────────────┐   │
+   433→│  │                 API GATEWAY + BACKEND                    │   │
+   434→│  │   ┌──────────┐  ┌──────────┐  ┌──────────┐            │   │
+   435→│  │   │  Auth    │  │  REST    │  │  WebSocket│            │   │
+   436→│  │   │  (JWT)   │  │  API     │  │  Realtime │            │   │
+   437→│  │   └──────────┘  └──────────┘  └──────────┘            │   │
+   438→│  └─────────────────────────┬─────────────────────────────┘   │
+   439→│                            │                                  │
+   440→│  ┌─────────────────────────┴─────────────────────────────┐   │
+   441→│  │              COUCHE DONNÉES (Multi-Tenant)             │   │
+   442→│  │   ┌──────────┐  ┌──────────┐  ┌──────────┐            │   │
+   443→│  │   │ PostgreSQL│  │  Redis   │  │  Object  │            │   │
+   444→│  │   │ (principal)│  │ (Cache)  │  │ Storage  │            │   │
+   445→│  │   └──────────┘  └──────────┘  └──────────┘            │   │
+   446→│  └───────────────────────────────────────────────────────┘   │
+   447→└───────────────────────────────────────────────────────────────┘`}</pre>
+   448→          </div>
+   449→        </CardContent>
+   450→      </Card>
+   451→
+   452→      <SubTitle title="3.2 Stack Technologique" />
+   453→      <SpecTable
+   454→        headers={['Composant', 'Technologie', 'Justification']}
+   455→        rows={[
+   456→          ['Backend API', 'Node.js + NestJS + TypeScript', 'Performance, écosystème riche, typage fort'],
+   457→          ['Dashboard Web', 'Next.js 16 + React 19 + TypeScript', 'SSR, performance, SEO, UI moderne'],
+   458→          ['App Android Patient', 'Kotlin + Jetpack Compose', 'Performance native, petite taille APK'],
+   459→          ['App Android Personnel', 'Kotlin + Jetpack Compose', 'Performance native, UI fluide'],
+   460→          ['App Android Admin', 'Kotlin + Jetpack Compose', 'Configuration complète sur mobile'],
+   461→          ['DB Serveur', 'PostgreSQL 16', 'Robuste, multi-tenant, JSON support'],
+   462→          ['DB Locale (offline)', 'SQLite + Room (Android)', 'Léger, fiable, synchronisation'],
+   463→          ['Cache', 'Redis', 'Sessions, cache, files d\'attente'],
+   464→          ['Sync Engine', 'Custom Delta Sync + CRDT', 'Résolution de conflits, faible bande passante'],
+   465→          ['Authentification', 'JWT + OAuth 2.0 + PIN', 'Sécurité, SSO, auth PIN pour Afrique'],
+   466→          ['Mobile Money', 'API MTN, Orange, M-Pesa, Wave', 'Paiements locaux intégrés'],
+   467→          ['SMS', 'Twilio Africa + providers locaux', 'Notifications sans internet'],
+   468→          ['Cloud / Hébergement', 'AWS (Afrique: Cape Town, Nairobi)', 'Data locality, conformité'],
+   469→          ['CI/CD', 'GitHub Actions + Fastlane', 'Automatisation builds et déploiement'],
+   470→        ]}
+   471→      />
+   472→
+   473→      <SubTitle title="3.3 Mécanisme de Synchronisation Offline" />
+   474→      <Card className="border-l-4 border-l-primary">
+   475→        <CardContent className="pt-6 space-y-4">
+   476→          <p className="text-muted-foreground">
+   477→            Le moteur de synchronisation est le cœur de NYA Santé. Il garantit que toutes les opérations
+   478→            fonctionnent parfaitement hors-ligne et se synchronisent automatiquement.
+   479→          </p>
+   480→          <div className="grid sm:grid-cols-3 gap-4">
+   481→            <div className="p-4 rounded-lg bg-primary/5 border border-primary/10">
+   482→              <Download className="w-6 h-6 text-primary mb-2" />
+   483→              <h4 className="font-semibold text-sm mb-1">1. Opération Locale</h4>
+   484→              <p className="text-xs text-muted-foreground">
+   485→                Chaque action (consultation, prescription, etc.) est d&apos;abord enregistrée localement dans SQLite
+   486→                avec un horodatage et un ID unique.
+   487→              </p>
+   488→            </div>
+   489→            <div className="p-4 rounded-lg bg-primary/5 border border-primary/10">
+   490→              <RefreshCw className="w-6 h-6 text-primary mb-2" />
+   491→              <h4 className="font-semibold text-sm mb-1">2. Détection Connectivité</h4>
+   492→              <p className="text-xs text-muted-foreground">
+   493→                Le système surveille en permanence la connectivité. Dès qu&apos;internet est disponible,
+   494→                la synchronisation démarre automatiquement en arrière-plan.
+   495→              </p>
+   496→            </div>
+   497→            <div className="p-4 rounded-lg bg-primary/5 border border-primary/10">
+   498→              <Upload className="w-6 h-6 text-primary mb-2" />
+   499→              <h4 className="font-semibold text-sm mb-1">3. Delta Sync</h4>
+   500→              <p className="text-xs text-muted-foreground">
+   501→                Seuls les changements (deltas) sont envoyés, pas les données complètes.
+   502→                Résolution des conflits par CRDT (Last-Write-Wins avec règles métier).
+   503→              </p>
+   504→            </div>
+   505→          </div>
+   506→          <div className="p-3 rounded-lg bg-muted/50">
+   507→            <p className="text-xs text-muted-foreground">
+   508→              <strong className="text-foreground">Performance cible :</strong> Synchronisation complète en moins de 30 secondes
+   509→              sur réseau 3G (1 Mo de données max). Support de la synchronisation partielle et de la reprise après interruption.
+   510→            </p>
+   511→          </div>
+   512→        </CardContent>
+   513→      </Card>
+   514→
+   515→      <SubTitle title="3.4 Sécurité et Conformité" />
+   516→      <div className="grid sm:grid-cols-2 gap-4">
+   517→        {[
+   518→          { icon: Lock, title: 'Chiffrement AES-256', desc: 'Toutes les données sont chiffrées au repos (AES-256) et en transit (TLS 1.3). La DB locale SQLite est chiffrée avec SQLCipher.' },
+   519→          { icon: Shield, title: 'RBAC Granulaire', desc: 'Contrôle d\'accès basé sur les rôles avec permissions fines. Chaque hôpital définit ses propres rôles et permissions.' },
+   520→          { icon: FileText, title: 'Audit Trail Complet', desc: 'Traçabilité de toutes les actions : qui a fait quoi, quand et depuis quel appareil. Journal immutable exportable.' },
+   521→          { icon: HardDrive, title: 'Backup Automatique', desc: 'Sauvegardes locales quotidiennes + synchronisation cloud chiffrée. Rétention de 90 jours minimum. Restauration en 1 clic.' },
+   522→        ].map((item, i) => (
+   523→          <FeatureCard key={i} {...item} status={i === 0 ? 'critical' : 'high'} />
+   524→        ))}
+   525→      </div>
+   526→    </div>
+   527→  )
+   528→}
+   529→
+   530→/* ─────────────────────────────────────────────
+   531→   TAB 4: MULTI-TENANT
+   532→   ───────────────────────────────────────────── */
+   533→function SectionMultiTenant() {
+   534→  return (
+   535→    <div className="space-y-6">
+   536→      <SectionTitle icon={Building2} title="Gestion Multi-Établissement" subtitle="Chaque propriétaire contrôle son hôpital de manière autonome" />
+   537→
+   538→      <SubTitle title="4.1 Modèle Multi-Tenant" />
+   539→      <Card>
+   540→        <CardContent className="pt-6">
+   541→          <p className="text-muted-foreground mb-4">
+   542→            NYA Santé utilise un modèle <strong className="text-foreground">multi-tenant isolé par schéma</strong> (Schema-per-Tenant).
+   543→            Chaque hôpital dispose de son propre espace de données complètement isolé, garantissant la confidentialité
+   544→            et la sécurité des données médicales.
+   545→          </p>
+   546→          <div className="grid sm:grid-cols-3 gap-4 mt-6">
+   547→            <div className="p-4 rounded-xl border-2 border-primary/20 bg-primary/5">
+   548→              <Building2 className="w-8 h-8 text-primary mb-3" />
+   549→              <h4 className="font-semibold mb-1">Tenant = Hôpital</h4>
+   550→              <p className="text-xs text-muted-foreground">
+   551→                Un tenant représente un hôpital ou un groupe hospitalier. Données complètement isolées entre tenants.
+   552→              </p>
+   553→            </div>
+   554→            <div className="p-4 rounded-xl border-2 border-amber-300/20 bg-amber-50 dark:bg-amber-900/10">
+   555→              <Workflow className="w-8 h-8 text-amber-600 mb-3" />
+   556→              <h4 className="font-semibold mb-1">Départements Configurables</h4>
+   557→              <p className="text-xs text-muted-foreground">
+   558→                Chaque propriétaire crée ses départements, services et unités selon son organisation. Aucune limite.
+   559→              </p>
+   560→            </div>
+   561→            <div className="p-4 rounded-xl border-2 border-emerald-300/20 bg-emerald-50 dark:bg-emerald-900/10">
+   562→              <Settings className="w-8 h-8 text-emerald-600 mb-3" />
+   563→              <h4 className="font-semibold mb-1">Configuration Autonome</h4>
+   564→              <p className="text-xs text-muted-foreground">
+   565→                Le propriétaire configure tout seul : départements, rôles, tarifs, préférences. Pas besoin de support technique.
+   566→              </p>
+   567→            </div>
+   568→          </div>
+   569→        </CardContent>
+   570→      </Card>
+   571→
+   572→      <SubTitle title="4.2 Hiérarchie Organisationnelle" />
+   573→      <Card>
+   574→        <CardContent className="pt-6">
+   575→          <div className="bg-muted/50 rounded-xl p-6 font-mono text-sm overflow-x-auto">
+   576→            <pre className="text-foreground/80 leading-relaxed">{`
+   577→🏢 Groupe Hospitalier (optionnel)
+   578→  └── 🏥 Hôpital Principal
+   579→        ├── 🏗️ Département de Médecine Interne
+   580→        │     ├── 👨‍⚕️ Service de Cardiologie
+   581→        │     ├── 👨‍⚕️ Service de Pneumologie
+   582→        │     └── 👨‍⚕️ Service de Gastro-entérologie
+   583→        ├── 🏗️ Département de Chirurgie
+   584→        │     ├── 🔪 Service de Chirurgie Générale
+   585→        │     ├── 🔪 Service d'Orthopédie
+   586→        │     └── 🔪 Bloc Opératoire
+   587→        ├── 🏗️ Département de Pédiatrie
+   588→        ├── 🏗️ Département de Maternité
+   589→        │     ├── 👶 Service de Gynécologie
+   590→        │     └── 👶 Service de Néonatologie
+   591→        ├── 🏗️ Laboratoire
+   592→        ├── 🏗️ Imagerie Médicale
+   593→        ├── 🏗️ Pharmacie
+   594→        ├── 🏗️ Urgences
+   595→        ├── 🏗️ Administration & RH
+   596→        └── 🏗️ Hôpital Secondaire (même groupe)
+   597→              └── ... (même structure)`}</pre>
+   598→          </div>
+   599→        </CardContent>
+   600→      </Card>
+   601→
+   602→      <SubTitle title="4.3 Système de Rôles et Permissions" />
+   603→      <p className="text-muted-foreground mb-4">
+   604→        Le propriétaire de l&apos;hôpital peut créer des rôles personnalisés et attribuer des permissions granulaires.
+   605→        Voici les rôles prédéfinis :
+   606→      </p>
+   607→      <Accordion type="single" collapsible className="space-y-2">
+   608→        {[
+   609→          {
+   610→            role: 'Super Administrateur (Propriétaire)',
+   611→            desc: 'Accès total à toutes les fonctionnalités. Crée les départements, les rôles, gère les abonnements.',
+   612→            perms: ['Gestion complète', 'Création de départements', 'Gestion des rôles', 'Rapports stratégiques', 'Configuration système']
+   613→          },
+   614→          {
+   615→            role: 'Médecin Chef de Département',
+   616→            desc: 'Gestion de son département : planning, personnel, validation des actes médicaux.',
+   617→            perms: ['Gestion du département', 'Validation des consultations', 'Planning du service', 'Rapports départementaux', 'Gestion des files d\'attente']
+   618→          },
+   619→          {
+   620→            role: 'Médecin',
+   621→            desc: 'Consultations, ordonnances, accès aux dossiers patients de son département.',
+   622→            perms: ['Consultations', 'Ordonnances', 'Dossiers patients', 'Résultats labo', 'Demandes d\'examens']
+   623→          },
+   624→          {
+   625→            role: 'Infirmier(e)',
+   626→            desc: 'Suivi des patients, injections, constante vitales, soins infirmiers.',
+   627→            perms: ['Constantes vitales', 'Administration des soins', 'Planning infirmier', 'Alertes patients', 'Rapport de garde']
+   628→          },
+   629→          {
+   630→            role: 'Laborantin',
+   631→            desc: 'Gestion des analyses, saisie des résultats, validation technique.',
+   632→            perms: ['Réception des échantillons', 'Saisie des résultats', 'Validation technique', 'Gestion des stocks labo']
+   633→          },
+   634→          {
+   635→            role: 'Pharmacien',
+   636→            desc: 'Gestion de la pharmacie, délivrance des médicaments, gestion des stocks.',
+   637→            perms: ['Délivrance médicaments', 'Gestion des stocks', 'Alertes péremption', 'Commandes fournisseurs']
+   638→          },
+   639→          {
+   640→            role: 'Réceptionniste / Caissier',
+   641→            desc: 'Accueil, enregistrement patients, prise de rendez-vous, encaissement.',
+   642→            perms: ['Enregistrement patients', 'Prise de rendez-vous', 'Encaissement', 'Impression reçus', 'Mobile Money']
+   643→          },
+   644→          {
+   645→            role: 'Patient',
+   646→            desc: 'Application mobile pour prendre RDV, voir ses résultats, payer en ligne.',
+   647→            perms: ['Prise de rendez-vous', 'Historique médical', 'Résultats d\'analyses', 'Paiement Mobile Money', 'Notifications SMS']
+   648→          },
+   649→        ].map((item, i) => (
+   650→          <AccordionItem key={i} value={`role-${i}`} className="border rounded-lg px-4">
+   651→            <AccordionTrigger className="hover:no-underline">
+   652→              <div className="flex items-center gap-3 text-left">
+   653→                <Users className="w-4 h-4 text-primary shrink-0" />
+   654→                <span className="font-medium">{item.role}</span>
+   655→              </div>
+   656→            </AccordionTrigger>
+   657→            <AccordionContent>
+   658→              <p className="text-sm text-muted-foreground mb-3">{item.desc}</p>
+   659→              <div className="flex flex-wrap gap-2">
+   660→                {item.perms.map((perm, j) => (
+   661→                  <Badge key={j} variant="secondary" className="text-xs">{perm}</Badge>
+   662→                ))}
+   663→              </div>
+   664→            </AccordionContent>
+   665→          </AccordionItem>
+   666→        ))}
+   667→      </Accordion>
+   668→
+   669→      <SubTitle title="4.4 Création de Départements par le Propriétaire" />
+   670→      <Card className="border-l-4 border-l-amber-500">
+   671→        <CardContent className="pt-6">
+   672→          <p className="text-muted-foreground mb-4">
+   673→            Chaque propriétaire d&apos;hôpital peut créer un nombre illimité de départements personnalisés.
+   674→            L&apos;interface permet une configuration intuitive en quelques clics :
+   675→          </p>
+   676→          <div className="grid sm:grid-cols-2 gap-4">
+   677→            {[
+   678→              { step: '1', title: 'Nommer le Département', desc: 'Ex: "Cardiologie", "Maternité", "Urgences", ou tout nom personnalisé.' },
+   679→              { step: '2', title: 'Définir le Type', desc: 'Clinique, Chirurgical, Technique (Labo, Imagerie), Administratif, ou Personnalisé.' },
+   680→              { step: '3', title: 'Assigner un Responsable', desc: 'Sélectionner un médecin ou un chef de service parmi le personnel existant.' },
+   681→              { step: '4', title: 'Configurer les Permissions', desc: 'Définir quels rôles ont accès aux fonctionnalités du département.' },
+   682→              { step: '5', title: 'Ajouter des Services', desc: 'Créer des sous-services (ex: Cardiologie → Consultation, ECG, Échographie).' },
+   683→              { step: '6', title: 'Paramétrer les Tarifs', desc: 'Définir les tarifs des consultations, actes et examens du département.' },
+   684→            ].map((item, i) => (
+   685→              <div key={i} className="flex gap-3 p-3 rounded-lg bg-muted/50">
+   686→                <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold shrink-0">
+   687→                  {item.step}
+   688→                </div>
+   689→                <div>
+   690→                  <h4 className="font-medium text-sm">{item.title}</h4>
+   691→                  <p className="text-xs text-muted-foreground mt-0.5">{item.desc}</p>
+   692→                </div>
+   693→              </div>
+   694→            ))}
+   695→          </div>
+   696→        </CardContent>
+   697→      </Card>
+   698→    </div>
+   699→  )
+   700→}
+   701→
+   702→/* ─────────────────────────────────────────────
+   703→   TAB 5: MODULES FONCTIONNELS (PART 1)
+   704→   ───────────────────────────────────────────── */
+   705→function SectionModules() {
+   706→  const [activeModule, setActiveModule] = useState('patients')
+   707→
+   708→  const modules = [
+   709→    {
+   710→      id: 'patients', icon: Heart, title: 'Gestion des Patients', status: 'critical',
+   711→      features: [
+   712→        'Inscription complète (nom, date naissance, sexe, adresse, contact, N° pièce identité)',
+   713→        'Photo du patient (prise depuis la caméra du téléphone)',
+   714→        'Génération automatique d\'un numéro de dossier unique',
+   715→        'Historique médical complet et chronologique',
+   716→        'Groupe sanguin, allergies, antécédents médicaux et chirurgicaux',
+   717→        'Contacts d\'urgence (jusqu\'à 3)',
+   718→        'Assurance maladie (numéro, type, couverture)',
+   719→        'Recherche rapide par nom, numéro, téléphone ou date',
+   720→        'Import/export de données patients (CSV, JSON)',
+   721→        'Statistiques démographiques par âge, sexe, localisation',
+   722→        'QR Code patient pour identification rapide au scanner',
+   723→        'Dossiers familiaux (liens parents-enfants)',
+   724→      ]
+   725→    },
+   726→    {
+   727→      id: 'dme', icon: FileText, title: 'Dossier Médical Électronique (DME)', status: 'critical',
+   728→      features: [
+   729→        'Dossier médical structuré et normalisé (HL7 FHIR)',
+   730→        'Notes de consultation structurées (SOAP : Subjectif, Objectif, Analyse, Plan)',
+   731→        'Antécédents médicaux, chirurgicaux, familiaux',
+   732→        'Liste des allergies et intolérances avec niveau de sévérité',
+   733→        'Vaccinations (date, vaccin, lot, prochain rappel)',
+   734→        'Mesures anthropométriques (poids, taille, IMC, tension, température)',
+   735→        'Courbes de croissance pédiatriques (OMS)',
+   736→        'Documents attachés (radios, comptes rendus externes)',
+   737→        'Historique des hospitalisations et interventions',
+   738→        'Résumé de dossier exportable (PDF, impressions)',
+   739→        'Partage sécurisé entre médecins du même département',
+   740→        'Signature électronique des médecins sur les actes',
+   741→      ]
+   742→    },
+   743→    {
+   744→      id: 'consultations', icon: Stethoscope, title: 'Consultations', status: 'critical',
+   745→      features: [
+   746→        'Prise de rendez-vous (en ligne, par téléphone, walk-in)',
+   747→        'File d\'attente virtuelle avec notifications SMS',
+   748→        'Consultation en présentiel avec template SOAP',
+   749→        'Consultation à distance (téléconsultation via app)',
+   750→        'Prescription d\'examens complémentaires (labo, imagerie)',
+   751→        'Ordonnance numérique avec envoi direct à la pharmacie',
+   752→        'Certificats médicaux (arrêt maladie, certificat de guérison, aptitude)',
+   753→        'Orientations et transferts inter-services ou inter-hôpitaux',
+   754→        'Comptes-rendus de consultation imprimables',
+   755→        'Suivi des consultations : nombre, durée, médecin, type',
+   756→        'Tarification configurable par type de consultation',
+   757→        'Rappel automatique de rendez-vous (SMS et notification app)',
+   758→      ]
+   759→    },
+   760→    {
+   761→      id: 'ordonnances', icon: Receipt, title: 'Ordonnances et Prescriptions', status: 'critical',
+   762→      features: [
+   763→        'Création d\'ordonnances avec base de données de médicaments',
+   764→        'Recherche rapide de médicaments (nom, DCI, classe thérapeutique)',
+   765→        'Posologie automatique calculée selon le poids/âge du patient',
+   766→        'Vérification des interactions médicamenteuses',
+   767→        'Alerte allergie patient vs médicament prescrit',
+   768→        'Ordonnance numérique signée électroniquement',
+   769→        'Envoi direct à la pharmacie de l\'hôpital',
+   770→        'Impression de l\'ordonnance pour pharmacie externe',
+   771→        'Renouvellement d\'ordonnance en un clic',
+   772→        'Historique complet des prescriptions par patient',
+   773→        'Modèles d\'ordonnances prédéfinis par spécialité',
+   774→        'Support des protocoles thérapeutiques nationaux',
+   775→      ]
+   776→    },
+   777→    {
+   778→      id: 'labo', icon: Microscope, title: 'Laboratoire', status: 'high',
+   779→      features: [
+   780→        'Catalogue d\'analyses configurable par l\'hôpital',
+   781→        'Prise en charge des échantillons avec code-barres/QR',
+   782→        'Saisie des résultats avec valeurs de référence',
+   783→        'Alertes automatiques si résultats critiques (flaggage)',
+   784→        'Validation technique par le laborantin puis biologique par le médecin',
+   785→        'Impression des résultats avec logo de l\'hôpital',
+   786→        'Envoi automatique des résultats au médecin prescripteur',
+   787→        'Notification SMS au patient quand résultats prêts',
+   788→        'Suivi de la chaîne de froid (température réfrigérateurs)',
+   789→        'Gestion des stocks de réactifs et consommables',
+   790→        'Statistiques : nombre d\'analyses, délais, rendement',
+   791→        'Interface avec les analyseurs automatiques (optionnel)',
+   792→      ]
+   793→    },
+   794→    {
+   795→      id: 'imagerie', icon: Eye, title: 'Imagerie Médicale', status: 'high',
+   796→      features: [
+   797→        'Demande d\'examen d\'imagerie depuis la consultation',
+   798→        'Planning de rendez-vous pour les examens',
+   799→        'Stockage des images (DICOM) avec compression',
+   800→        'Comptes-rendus radiologiques structurés',
+   801→        'Signature électronique du radiologue',
+   802→        'Visualisation des images sur tablette/smartphone',
+   803→        'Partage sécurisé avec le médecin demandeur',
+   804→        'Historique des examens par patient',
+   805→        'Gestion des contre-indications (allergie iode, grossesse)',
+   806→        'Statistiques par type d\'examen',
+   807→      ]
+   808→    },
+   809→    {
+   810→      id: 'pharmacie', icon: Pill, title: 'Pharmacie et Stocks', status: 'high',
+   811→      features: [
+   812→        'Catalogue de médicaments avec code CIP, DCI, classe',
+   813→        'Gestion des entrées (commandes, retours, transferts)',
+   814→        'Gestion des sorties (délivrance aux patients, services)',
+   815→        'Stock en temps réel par médicament et lot',
+   816→        'Alertes de seuil minimum de stock',
+   817→        'Gestion des dates de péremption (FEFO : First Expired First Out)',
+   818→        'Inventaire tournant avec tableau de bord',
+   819→        'Commandes fournisseurs automatisées',
+   820→        'Traçabilité complète (lot, fournisseur, date)',
+   821→        'Valorisation du stock (PMP, FIFO)',
+   822→        'Rapports de consommation par service/département',
+   823→        'Gestion multi-pharmacies (pharmacie principale + satellites)',
+   824→      ]
+   825→    },
+   826→    {
+   827→      id: 'facturation', icon: CreditCard, title: 'Facturation et Paiements', status: 'critical',
+   828→      features: [
+   829→        'Tarification configurable par acte, service et département',
+   830→        'Génération automatique de factures après actes',
+   831→        'Support Mobile Money (MTN, Orange, M-Pesa, Wave)',
+   832→        'Support espèces, carte bancaire, virement',
+   833→        'Paiement échelonné et suivi des impayés',
+   834→        'Reçus imprimables et envoyés par SMS',
+   835→        'Gestion des assurances maladie (tiers payant)',
+   836→        'Rabais et exonérations configurables',
+   837→        'Clôture de caisse journalière',
+   838→        'Rapports financiers : recettes, impayés, par moyen de paiement',
+   839→        'Export comptable (format OHADA)',
+   840→        'Multi-devises (FCFA, USD, EUR, devises locales)',
+   841→      ]
+   842→    },
+   843→    {
+   844→      id: 'rdv', icon: Calendar, title: 'Gestion des Rendez-vous', status: 'high',
+   845→      features: [
+   846→        'Agenda partagé par médecin et par service',
+   847→        'Prise de RDV en ligne (app patient) et au guichet',
+   848→        'Créneaux configurables par médecin (durée, type)',
+   849→        'File d\'attente avec position en temps réel',
+   850→        'Rappel SMS automatique (24h et 2h avant)',
+   851→        'Gestion des annulations et reports',
+   852→        'Statistiques de présence/absence',
+   853→        'Planning multi-médecins avec vue globale',
+   854→        'Synchronisation offline (RDV pris hors-ligne sync au retour)',
+   855→      ]
+   856→    },
+   857→    {
+   858→      id: 'hospitalisation', icon: BedDouble, title: 'Hospitalisation', status: 'high',
+   859→      features: [
+   860→        'Gestion des lits (plan de l\'hôpital, disponibilité)',
+   861→        'Admission, transfert et sortie de patients',
+   862→        'Dossier d\'hospitalisation avec suivi quotidien',
+   863→        'Prescriptions médicales continues',
+   864→        'Feuille de soins infirmiers numérisée',
+   865→        'Surveillance des constantes vitales',
+   866→        'Résumé de sortie automatique',
+   867→        'Facturation au forfait ou à l\'acte',
+   868→        'Statistiques : durée moyenne, taux d\'occupation, lits disponibles',
+   869→      ]
+   870→    },
+   871→    {
+   872→      id: 'bloc-operatoire', icon: Scissors, title: 'Bloc Opératoire et Chirurgie', status: 'medium',
+   873→      features: [
+   874→        'Planning chirurgical (programme opératoire)',
+   875→        'Gestion des salles d\'opération',
+   876→        'Check-list OMS de sécurité chirurgicale',
+   877→        'Dossiers opératoires complets',
+   878→        'Suivi du parcours chirurgical du patient',
+   879→        'Gestion du matériel chirurgical et stérilisation',
+   880→        'Comptes-rendus opératoires',
+   881→      ]
+   882→    },
+   883→    {
+   884→      id: 'urgences', icon: AlertTriangle, title: 'Urgences', status: 'critical',
+   885→      features: [
+   886→        'Triage avec classification (I à IV)',
+   887→        'Prise en charge rapide avec formulaire minimal',
+   888→        'Suivi en temps réel des patients aux urgences',
+   889→        'Transfert vers les services appropriés',
+   890→        'Statistiques d\'urgences (fréquentation, motifs, délais)',
+   891→        'Alertes et notifications en temps réel',
+   892→      ]
+   893→    },
+   894→    {
+   895→      id: 'maternite', icon: Baby, title: 'Maternité et Néonatologie', status: 'high',
+   896→      features: [
+   897→        'Suivi de grossesse (CPN, échographies, analyses)',
+   898→        'Carnet de grossesse numérique',
+   899→        'Déclaration de naissance et certificat',
+   900→        'Suivi néonatal (courbes de poids, vaccinations)',
+   901→        'Alertes de grossesse à risque',
+   902→        'Planning des accouchements',
+   903→      ]
+   904→    },
+   905→    {
+   906→      id: 'rh', icon: UserCog, title: 'Ressources Humaines', status: 'medium',
+   907→      features: [
+   908→        'Fiche employé complète (diplômes, contrats, salaires)',
+   909→        'Gestion des présences et pointages',
+   910→        'Planning de garde et congés',
+   911→        'Gestion des salaires et avances',
+   912→        'Tableau de bord RH',
+   913→        'Documents administratifs (attestations, certificats)',
+   914→      ]
+   915→    },
+   916→    {
+   917→      id: 'rapports', icon: BarChart3, title: 'Rapports et Tableaux de Bord', status: 'high',
+   918→      features: [
+   919→        'Dashboard avec KPIs en temps réel',
+   920→        'Rapports d\'activité (consultations, hospitalisations, urgences)',
+   921→        'Rapports financiers (recettes, dépenses, bénéfices)',
+   922→        'Rapports de stock (médicaments, réactifs, consommables)',
+   923→        'Rapports RH (présences, productivité)',
+   924→        'Exportation en PDF, Excel, impression',
+   925→        'Personnalisation des rapports',
+   926→        'Planification de rapports automatiques (envoi par email)',
+   927→      ]
+   928→    },
+   929→    {
+   930→      id: 'messagerie', icon: MessageSquare, title: 'Messagerie et Notifications', status: 'medium',
+   931→      features: [
+   932→        'Messagerie interne entre les membres de l\'équipe',
+   933→        'Notifications push dans l\'application',
+   934→        'Notifications SMS pour les patients (sans smartphone)',
+   935→        'Rappels de rendez-vous',
+   936→        'Alertes résultats d\'analyses',
+   937→        'Annonces et communications institutionnelles',
+   938→      ]
+   939→    },
+   940→  ]
+   941→
+   942→  const activeMod = modules.find(m => m.id === activeModule)!
+   943→
+   944→  return (
+   945→    <div className="space-y-6">
+   946→      <SectionTitle icon={Layers} title="Modules Fonctionnels" subtitle="16 modules couvrant 100% des besoins hospitaliers" />
+   947→
+   948→      <div className="grid lg:grid-cols-[280px_1fr] gap-6">
+   949→        {/* Module List */}
+   950→        <div className="space-y-1.5 max-h-[600px] overflow-y-auto pr-2">
+   951→          {modules.map((mod) => (
+   952→            <button
+   953→              key={mod.id}
+   954→              onClick={() => setActiveModule(mod.id)}
+   955→              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left text-sm transition-all ${
+   956→                activeModule === mod.id
+   957→                  ? 'bg-primary text-primary-foreground shadow-sm'
+   958→                  : 'hover:bg-muted/80 text-muted-foreground hover:text-foreground'
+   959→              }`}
+   960→            >
+   961→              <mod.icon className="w-4 h-4 shrink-0" />
+   962→              <span className="truncate font-medium">{mod.title}</span>
+   963→              {activeModule === mod.id && (
+   964→                <Badge variant="secondary" className="ml-auto text-xs bg-white/20 text-inherit border-0 shrink-0">
+   965→                  {mod.features.length}
+   966→                </Badge>
+   967→              )}
+   968→            </button>
+   969→          ))}
+   970→        </div>
+   971→
+   972→        {/* Module Detail */}
+   973→        <Card>
+   974→          <CardHeader>
+   975→            <div className="flex items-center justify-between">
+   976→              <div className="flex items-center gap-3">
+   977→                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+   978→                  <activeMod.icon className="w-5 h-5 text-primary" />
+   979→                </div>
+   980→                <div>
+   981→                  <CardTitle>{activeMod.title}</CardTitle>
+   982→                  <CardDescription>{activeMod.features.length} fonctionnalités détaillées</CardDescription>
+   983→                </div>
+   984→              </div>
+   985→              <Badge variant="outline" className={
+   986→                activeMod.status === 'critical' ? 'border-red-300 text-red-700 dark:text-red-400' :
+   987→                activeMod.status === 'high' ? 'border-amber-300 text-amber-700 dark:text-amber-400' :
+   988→                'border-blue-300 text-blue-700 dark:text-blue-400'
+   989→              }>
+   990→                {activeMod.status === 'critical' ? 'Critique' : activeMod.status === 'high' ? 'Priorité Haute' : 'Moyenne'}
+   991→              </Badge>
+   992→            </div>
+   993→          </CardHeader>
+   994→          <CardContent>
+   995→            <ul className="space-y-2.5">
+   996→              {activeMod.features.map((feature, i) => (
+   997→                <li key={i} className="flex items-start gap-3 text-sm">
+   998→                  <CheckCircle2 className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+   999→                  <span className="text-muted-foreground leading-relaxed">{feature}</span>
+  1000→                </li>
+  1001→              ))}
+  1002→            </ul>
+  1003→          </CardContent>
+  1004→        </Card>
+  1005→      </div>
+  1006→    </div>
+  1007→  )
+  1008→}
+  1009→
+  1010→/* ─────────────────────────────────────────────
+  1011→   TAB 6: APPLICATIONS ANDROID
+  1012→   ───────────────────────────────────────────── */
+  1013→function SectionAndroid() {
+  1014→  return (
+  1015→    <div className="space-y-6">
+  1016→      <SectionTitle icon={Smartphone} title="Applications Android" subtitle="3 applications natives pour couvrir tous les utilisateurs" />
+  1017→
+  1018→      <SubTitle title="6.1 Application Patient" />
+  1019→      <Card className="border-l-4 border-l-primary">
+  1020→        <CardContent className="pt-6">
+  1021→          <div className="grid sm:grid-cols-2 gap-6">
+  1022→            <div>
+  1023→              <h4 className="font-semibold mb-3 flex items-center gap-2">
+  1024→                <Heart className="w-4 h-4 text-primary" /> Fonctionnalités
+  1025→              </h4>
+  1026→              <ul className="space-y-2">
+  1027→                {[
+  1028→                  'Inscription et authentification (téléphone + PIN)',
+  1029→                  'Prise de rendez-vous en ligne (offline possible)',
+  1030→                  'Historique médical personnel consultable',
+  1031→                  'Résultats d\'analyses et examens',
+  1032→                  'Ordonnances numériques',
+  1033→                  'Paiement via Mobile Money',
+  1034→                  'Notifications de rappel (push + SMS)',
+  1035→                  'Carte d\'identité santé (QR Code)',
+  1036→                  'Recherche de médecins et services',
+  1037→                  'Chat avec le médecin (messagerie intégrée)',
+  1038→                  'Téléconsultation (appels vidéo/audio)',
+  1039→                  'Mode offline : consultation de l\'historique, RDV pris hors-ligne',
+  1040→                ].map((f, i) => (
+  1041→                  <li key={i} className="flex items-start gap-2 text-sm">
+  1042→                    <CheckCircle2 className="w-3.5 h-3.5 text-primary mt-0.5 shrink-0" />
+  1043→                    <span className="text-muted-foreground">{f}</span>
+  1044→                  </li>
+  1045→                ))}
+  1046→              </ul>
+  1047→            </div>
+  1048→            <div className="space-y-4">
+  1049→              <div className="p-4 rounded-lg bg-muted/50">
+  1050→                <h5 className="font-medium text-sm mb-2">Spécifications Techniques</h5>
+  1051→                <div className="space-y-1.5 text-xs text-muted-foreground">
+  1052→                  <p><strong className="text-foreground">Langage :</strong> Kotlin + Jetpack Compose</p>
+  1053→                  <p><strong className="text-foreground">API Minimum :</strong> Android 7.0 (API 24)</p>
+  1054→                  <p><strong className="text-foreground">Taille APK :</strong> &lt; 15 MB (sans données)</p>
+  1055→                  <p><strong className="text-foreground">RAM Requise :</strong> 1.5 GB minimum</p>
+  1056→                  <p><strong className="text-foreground">DB Locale :</strong> SQLite + Room</p>
+  1057→                  <p><strong className="text-foreground">Auth :</strong> Téléphone + PIN (pas d\'email requis)</p>
+  1058→                  <p><strong className="text-foreground">PWA :</strong> Oui, pour accès navigateur</p>
+  1059→                </div>
+  1060→              </div>
+  1061→              <div className="p-4 rounded-lg bg-amber-50 dark:bg-amber-900/20">
+  1062→                <h5 className="font-medium text-sm mb-2 text-amber-700 dark:text-amber-400">Optimisations Afrique</h5>
+  1063→                <ul className="space-y-1 text-xs text-muted-foreground">
+  1064→                  <li>• Interface en Français, Anglais, Arabe, Wolof, etc.</li>
+  1065→                  <li>• Mode économie de données (images compressées)</li>
+  1066→                  <li>• SMS fallback pour les notifications</li>
+  1067→                  <li>• Fonctionne sur réseau 2G pour les messages essentiels</li>
+  1068→                  <li>• Pas de compte Google requis pour l\'inscription</li>
+  1069→                </ul>
+  1070→              </div>
+  1071→            </div>
+  1072→          </div>
+  1073→        </CardContent>
+  1074→      </Card>
+  1075→
+  1076→      <SubTitle title="6.2 Application Personnel Médical" />
+  1077→      <Card className="border-l-4 border-l-teal-500">
+  1078→        <CardContent className="pt-6">
+  1079→          <div className="grid sm:grid-cols-3 gap-4">
+  1080→            {[
+  1081→              {
+  1082→                icon: Stethoscope, role: 'Médecin',
+  1083→                features: ['Dossiers patients (offline)', 'Consultations SOAP', 'Ordonnances numériques', 'Résultats labo & imagerie', 'Prescriptions d\'examens', 'Certificats médicaux', 'Téléconsultation', 'Agenda et planning', 'Messagerie interne']
+  1084→              },
+  1085→              {
+  1086→                icon: Users, role: 'Infirmier(e)',
+  1087→                features: ['Constantes vitales', 'Administration des soins', 'Feuille de garde', 'Planning des soins', 'Alertes patients', 'Traçabilité des actes', 'Messagerie', 'Dossiers patients (lecture)', 'Signalement médecin']
+  1088→              },
+  1089→              {
+  1090→                icon: Microscope, role: 'Laborantin',
+  1091→                features: ['Réception échantillons', 'Saisie des résultats', 'Validation technique', 'Gestion des stocks', 'Impression résultats', 'Statistiques labo', 'Chaîne de froid', 'Code-barres / QR']
+  1092→              },
+  1093→            ].map((item, i) => (
+  1094→              <div key={i} className="p-4 rounded-lg border">
+  1095→                <div className="flex items-center gap-2 mb-3">
+  1096→                  <item.icon className="w-5 h-5 text-primary" />
+  1097→                  <h4 className="font-semibold">{item.role}</h4>
+  1098→                </div>
+  1099→                <ul className="space-y-1.5">
+  1100→                  {item.features.map((f, j) => (
+  1101→                    <li key={j} className="flex items-start gap-1.5 text-xs">
+  1102→                      <ArrowRight className="w-3 h-3 text-primary mt-0.5 shrink-0" />
+  1103→                      <span className="text-muted-foreground">{f}</span>
+  1104→                    </li>
+  1105→                  ))}
+  1106→                </ul>
+  1107→              </div>
+  1108→            ))}
+  1109→          </div>
+  1110→        </CardContent>
+  1111→      </Card>
+  1112→
+  1113→      <SubTitle title="6.3 Application Administration" />
+  1114→      <Card className="border-l-4 border-l-amber-500">
+  1115→        <CardContent className="pt-6">
+  1116→          <p className="text-muted-foreground mb-4">
+  1117→            L&apos;application d&apos;administration permet au propriétaire et aux gestionnaires de piloter
+  1118→            l&apos;ensemble de l&apos;hôpital depuis leur smartphone, même sans internet.
+  1119→          </p>
+  1120→          <div className="grid sm:grid-cols-2 gap-4">
+  1121→            {[
+  1122→              { title: 'Dashboard', desc: 'KPIs en temps réel : consultations, revenus, lits occupés, files d\'attente, alertes.' },
+  1123→              { title: 'Départements', desc: 'Création, modification et suppression de départements et services en toute autonomie.' },
+  1124→              { title: 'Personnel', desc: 'Gestion des employés : ajout, rôles, permissions, planning, pointage.' },
+  1125→              { title: 'Finance', desc: 'Recettes, dépenses, factures, impayés, clôtures de caisse, rapports.' },
+  1126→              { title: 'Stock', desc: 'Pharmacie, consommables, réactifs : entrées, sorties, alertes, commandes.' },
+  1127→              { title: 'Configuration', desc: 'Tarifs, langues, préférences, intégrations, sauvegardes, paramètres système.' },
+  1128→            ].map((item, i) => (
+  1129→              <FeatureCard key={i} icon={Settings} title={item.title} description={item.desc} />
+  1130→            ))}
+  1131→          </div>
+  1132→        </CardContent>
+  1133→      </Card>
+  1134→
+  1135→      <SubTitle title="6.4 Fonctionnement Hors-Ligne Détaillé" />
+  1136→      <Card>
+  1137→        <CardContent className="pt-6">
+  1138→          <SpecTable
+  1139→            headers={['Fonctionnalité', 'Hors-Ligne', 'Sync Auto', 'Notes']}
+  1140→            rows={[
+  1141→              ['Consulter un dossier patient', '✅ Oui', '✅ Oui', 'Données locales SQLite'],
+  1142→              ['Créer une consultation', '✅ Oui', '✅ Oui', 'Sync quand connexion disponible'],
+  1143→              ['Rédiger une ordonnance', '✅ Oui', '✅ Oui', 'Signature différée possible'],
+  1144→              ['Saisir des résultats labo', '✅ Oui', '✅ Oui', 'Validation en ligne requise'],
+  1145→              ['Prendre un rendez-vous', '✅ Oui', '✅ Oui', 'Vérification conflits au sync'],
+  1146→              ['Paiement Mobile Money', '❌ Non', '—', 'Requiert connexion internet'],
+  1147→              ['Envoi de SMS', '⚠️ File d\'attente', '✅ Oui', 'Envoi dès connexion'],
+  1148→              ['Recherche patient globale', '⚠️ Local only', '—', 'Recherche locale uniquement'],
+  1149→              ['Mise à jour profil patient', '✅ Oui', '✅ Oui', 'Sync bidirectionnelle'],
+  1150→              ['Génération de rapports', '✅ Oui (basiques)', '—', 'Données locales uniquement'],
+  1151→            ]}
+  1152→          />
+  1153→        </CardContent>
+  1154→      </Card>
+  1155→    </div>
+  1156→  )
+  1157→}
+  1158→
+  1159→/* ─────────────────────────────────────────────
+  1160→   TAB 7: ADAPTATIONS AFRICAINES
+  1161→   ───────────────────────────────────────────── */
+  1162→function SectionAdaptations() {
+  1163→  return (
+  1164→    <div className="space-y-6">
+  1165→      <SectionTitle icon={Globe} title="Adaptations Africaines" subtitle="Conçu spécifiquement pour les réalités du continent africain" />
+  1166→
+  1167→      <SubTitle title="7.1 Fonctionnement Offline-First" />
+  1168→      <Card className="border-l-4 border-l-primary">
+  1169→        <CardContent className="pt-6">
+  1170→          <p className="text-muted-foreground mb-4">
+  1171→            Le principe fondamental de NYA Santé : <strong className="text-foreground">l&apos;application doit fonctionner
+  1172→            à 100% sans connexion internet</strong>. C&apos;est le différenciateur majeur par rapport à toutes les
+  1173→            solutions occidentales.
+  1174→          </p>
+  1175→          <div className="grid sm:grid-cols-2 gap-4">
+  1176→            <div className="space-y-3">
+  1177→              <h4 className="font-semibold text-sm flex items-center gap-2">
+  1178→                <CheckCircle2 className="w-4 h-4 text-primary" /> Ce qui fonctionne hors-ligne
+  1179→              </h4>
+  1180→              <ul className="space-y-1.5 text-sm text-muted-foreground">
+  1181→                {['Consultation de tous les dossiers patients', 'Création de consultations et ordonnances', 'Saisie des résultats de laboratoire', 'Prise de rendez-vous', 'Gestion de la file d\'attente', 'Consultation du planning', 'Recherche locale de patients', 'Saisie des constantes vitales', 'Rédaction de certificats médicaux', 'Consultation de l\'historique médical'].map((item, i) => (
+  1182→                  <li key={i} className="flex items-center gap-2">
+  1183→                    <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+  1184→                    {item}
+  1185→                  </li>
+  1186→                ))}
+  1187→              </ul>
+  1188→            </div>
+  1189→            <div className="space-y-3">
+  1190→              <h4 className="font-semibold text-sm flex items-center gap-2">
+  1191→                <Clock className="w-4 h-4 text-amber-600" /> Ce qui nécessite internet
+  1192→              </h4>
+  1193→              <ul className="space-y-1.5 text-sm text-muted-foreground">
+  1194→                {['Paiement Mobile Money', 'Envoi de SMS (file d\'attente)', 'Synchronisation des données', 'Téléconsultation vidéo', 'Mise à jour de l\'application', 'Envoi de notifications push', 'Export de rapports par email', 'Partage de dossiers inter-hôpitaux'].map((item, i) => (
+  1195→                  <li key={i} className="flex items-center gap-2">
+  1196→                    <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+  1197→                    {item}
+  1198→                  </li>
+  1199→                ))}
+  1200→              </ul>
+  1201→            </div>
+  1202→          </div>
+  1203→        </CardContent>
+  1204→      </Card>
+  1205→
+  1206→      <SubTitle title="7.2 Intégration Mobile Money" />
+  1207→      <Card>
+  1208→        <CardContent className="pt-6">
+  1209→          <p className="text-muted-foreground mb-4">
+  1210→            L&apos;intégration des paiements mobiles est native et prioritaire. En Afrique, plus de 60% des adultes
+  1211→            utilisent Mobile Money, contre seulement 10-20% les comptes bancaires.
+  1212→          </p>
+  1213→          <SpecTable
+  1214→            headers={['Opérateur', 'Pays Couverts', 'Statut', 'Fonctionnalités']}
+  1215→            rows={[
+  1216→              ['MTN Mobile Money', 'Cameroun, Côte d\'Ivoire, Ghana, Guinée, RDC, etc.', 'Phase 1', 'Paiement, remboursement, vérification solde'],
+  1217→              ['Orange Money', 'Cameroun, CI, Sénégal, Mali, Guinée, etc.', 'Phase 1', 'Paiement, remboursement, vérification solde'],
+  1218→              ['M-Pesa', 'Kenya, Tanzanie, Mozambique, RDC', 'Phase 1', 'Paiement, remboursement, vérification solde'],
+  1219→              ['Wave', 'Sénégal, Côte d\'Ivoire', 'Phase 1', 'Paiement, remboursement, vérification solde'],
+  1220→              ['Moov Money', 'Bénin, Togo, Burkina Faso, CI', 'Phase 2', 'Paiement, remboursement'],
+  1221→              ['Airtel Money', 'Nigeria, Ouganda, Rwanda, Malawi', 'Phase 2', 'Paiement, remboursement'],
+  1222→              ['EcoCash', 'Zimbabwe', 'Phase 2', 'Paiement'],
+  1223→              ['Paiement Espèces', 'Tous les pays', 'Phase 1', 'Encaissement manuel, reçu imprimé'],
+  1224→            ]}
+  1225→          />
+  1226→        </CardContent>
+  1227→      </Card>
+  1228→
+  1229→      <SubTitle title="7.3 SMS et Notifications" />
+  1230→      <div className="grid sm:grid-cols-2 gap-4">
+  1231→        {[
+  1232→          { title: 'Rappels de Rendez-vous', desc: 'SMS automatique 24h et 2h avant le rendez-vous. Configurable par patient et par hôpital.', icon: Bell },
+  1233→          { title: 'Résultats d\'Analyses', desc: 'Notification SMS quand les résultats sont prêts. Le patient peut venir les chercher ou les consulter dans l\'app.', icon: Microscope },
+  1234→          { title: 'Alertes Médicales', desc: 'Notifications pour les rappels de vaccins, suivi de grossesse, renouvellement de traitement chronique.', icon: AlertTriangle },
+  1235→          { title: 'Rappels de Paiement', desc: 'Notification douce pour les impayés. Rappel avant la relance officielle. Personnalisable.', icon: Receipt },
+  1236→        ].map((item, i) => (
+  1237→          <FeatureCard key={i} {...item} icon={item.icon} />
+  1238→        ))}
+  1239→      </div>
+  1240→
+  1241→      <SubTitle title="7.4 Multilinguisme" />
+  1242→      <Card>
+  1243→        <CardContent className="pt-6">
+  1244→          <SpecTable
+  1245→            headers={['Langue', 'Zone', 'Statut', 'Couverture']}
+  1246→            rows={[
+  1247→              ['Français', 'Afrique Francophone (24 pays)', 'Phase 1', 'Interface complète + données'],
+  1248→              ['Anglais', 'Afrique Anglophone (21 pays)', 'Phase 1', 'Interface complète + données'],
+  1249→              ['Arabe', 'Afrique du Nord (7 pays)', 'Phase 1', 'Interface complète (RTL)'],
+  1250→              ['Portugais', 'PALOP (5 pays)', 'Phase 2', 'Interface complète'],
+  1251→              ['Swahili', 'Est Africain (5 pays)', 'Phase 2', 'Interface complète'],
+  1252→              ['Wolof', 'Sénégal', 'Phase 2', 'Interface complète'],
+  1253→              ['Lingala', 'Congo, RDC', 'Phase 2', 'Interface complète'],
+  1254→              ['Bambara', 'Mali', 'Phase 3', 'Interface complète'],
+  1255→              ['Hausa', 'Nigeria, Niger, etc.', 'Phase 3', 'Interface complète'],
+  1256→              ['Amharique', 'Éthiopie', 'Phase 3', 'Interface complète'],
+  1257→              ['Perso (ajout utilisateur)', 'Toutes', 'Phase 2', 'Traduction communautaire'],
+  1258→            ]}
+  1259→          />
+  1260→        </CardContent>
+  1261→      </Card>
+  1262→
+  1263→      <SubTitle title="7.5 Conformité Réglementaire" />
+  1264→      <div className="grid sm:grid-cols-2 gap-4">
+  1265→        {[
+  1266→          { title: 'OHADA', desc: 'Conformité avec les normes comptables de l\'Organisation pour l\'Harmonisation en Afrique du Droit des Affaires.', icon: FileText },
+  1267→          { title: 'CEDEAO', desc: 'Respect des directives de la Communauté Économique des États de l\'Afrique de l\'Ouest sur la santé et les données.', icon: Globe },
+  1268→          { title: 'UA / OMS', desc: 'Alignement avec les stratégies de l\'Union Africaine et de l\'OMS pour la santé numérique en Afrique.', icon: Star },
+  1269→          { title: 'HL7 FHIR', desc: 'Interopérabilité avec les standards internationaux de santé numérique. Export/import au format FHIR.', icon: Database },
+  1270→        ].map((item, i) => (
+  1271→          <FeatureCard key={i} {...item} status="high" />
+  1272→        ))}
+  1273→      </div>
+  1274→
+  1275→      <SubTitle title="7.6 Optimisation Faible Bande Passante" />
+  1276→      <Card className="nya-gradient text-white">
+  1277→        <CardContent className="pt-6">
+  1278→          <div className="grid sm:grid-cols-2 gap-6">
+  1279→            <div>
+  1280→              <h4 className="font-semibold text-white mb-4">Stratégies d&apos;Optimisation</h4>
+  1281→              <ul className="space-y-2">
+  1282→                {[
+  1283→                  'Compression de toutes les données échangées (gzip/brotli)',
+  1284→                  'Synchronisation delta (seuls les changements sont envoyés)',
+  1285→                  'Mise en cache agressive des données fréquemment consultées',
+  1286→                  'Images et documents compressés côté client avant envoi',
+  1287→                  'Mode texte-only pour les connexions très lentes',
+  1288→                  'Priorisation des données critiques (sync médicale avant sync admin)',
+  1289→                  'Reprise automatique des transferts interrompus',
+  1290→                  'Batching des requêtes pour réduire le nombre d\'appels',
+  1291→                ].map((item, i) => (
+  1292→                  <li key={i} className="flex items-start gap-2 text-sm text-white/90">
+  1293→                    <CheckCircle2 className="w-4 h-4 text-amber-300 mt-0.5 shrink-0" />
+  1294→                    {item}
+  1295→                  </li>
+  1296→                ))}
+  1297→              </ul>
+  1298→            </div>
+  1299→            <div className="space-y-3">
+  1300→              <div className="p-4 rounded-lg bg-white/10">
+  1301→                <div className="text-3xl font-bold text-amber-300">&lt; 1 Mo</div>
+  1302→                <p className="text-sm text-white/70 mt-1">Données par synchronisation complète</p>
+  1303→              </div>
+  1304→              <div className="p-4 rounded-lg bg-white/10">
+  1305→                <div className="text-3xl font-bold text-amber-300">&lt; 30 sec</div>
+  1306→                <p className="text-sm text-white/70 mt-1">Temps de sync sur réseau 3G</p>
+  1307→              </div>
+  1308→              <div className="p-4 rounded-lg bg-white/10">
+  1309→                <div className="text-3xl font-bold text-amber-300">&lt; 15 MB</div>
+  1310→                <p className="text-sm text-white/70 mt-1">Taille de l\'APK Android</p>
+  1311→              </div>
+  1312→            </div>
+  1313→          </div>
+  1314→        </CardContent>
+  1315→      </Card>
+  1316→    </div>
+  1317→  )
+  1318→}
+  1319→
+  1320→/* ─────────────────────────────────────────────
+  1321→   TAB 8: SÉCURITÉ
+  1322→   ───────────────────────────────────────────── */
+  1323→function SectionSecurite() {
+  1324→  return (
+  1325→    <div className="space-y-6">
+  1326→      <SectionTitle icon={Shield} title="Sécurité et Confidentialité" subtitle="Protection maximale des données médicales sensibles" />
+  1327→
+  1328→      <SubTitle title="8.1 Chiffrement et Protection des Données" />
+  1329→      <div className="grid sm:grid-cols-2 gap-4">
+  1330→        {[
+  1331→          { title: 'Chiffrement au Repos', desc: 'Toutes les données stockées sont chiffrées avec AES-256. La base de données locale (SQLite) est protégée par SQLCipher.', status: 'critical' },
+  1332→          { title: 'Chiffrement en Transit', desc: 'Toutes les communications utilisent TLS 1.3. Les certificats sont gérés automatiquement avec renouvellement.', status: 'critical' },
+  1333→          { title: 'Hachage des Mots de Passe', desc: 'Les mots de passe sont hachés avec bcrypt (cost 12). Les PIN sont hachés séparément avec un sel unique par utilisateur.', status: 'critical' },
+  1334→          { title: 'Protection de la Clé de Chiffrement', desc: 'La clé maîtresse est stockée dans un HSM (Hardware Security Module) ou un KMS (Key Management Service).', status: 'high' },
+  1335→        ].map((item, i) => (
+  1336→          <FeatureCard key={i} icon={Lock} {...item} />
+  1337→        ))}
+  1338→      </div>
+  1339→
+  1340→      <SubTitle title="8.2 Gestion des Accès" />
+  1341→      <Card>
+  1342→        <CardContent className="pt-6">
+  1343→          <SpecTable
+  1344→            headers={['Mécanisme', 'Description', 'Niveau']}
+  1345→            rows={[
+  1346→              ['JWT + Refresh Token', 'Authentification stateless avec token de 15 min + refresh 7 jours', 'Standard'],
+  1347→              ['Auth PIN (6 chiffres)', 'Alternative pour les utilisateurs sans mot de passe complexe', 'Afrique'],
+  1348→              ['Auth Biométrique', 'Empreinte digitale et reconnaissance faciale sur les appareils compatibles', 'Optionnel'],
+  1349→              ['2FA SMS', 'Double authentification par code SMS pour les actions sensibles', 'Recommandé'],
+  1350→              ['Verrouillage Auto', 'Verrouillage de l\'app après 2 min d\'inactivité', 'Obligatoire'],
+  1351→              ['Révocation de Token', 'Révocation immédiate en cas de vol/perte d\'appareil', 'Critique'],
+  1352→              ['Audit des Connexions', 'Historique de toutes les connexions (appareil, lieu, date)', 'Standard'],
+  1353→            ]}
+  1354→          />
+  1355→        </CardContent>
+  1356→      </Card>
+  1357→
+  1358→      <SubTitle title="8.3 Audit Trail" />
+  1359→      <Card>
+  1360→        <CardContent className="pt-6">
+  1361→          <p className="text-muted-foreground mb-4">
+  1362→            Chaque action dans NYA Santé est enregistrée dans un journal d&apos;audit immutable :
+  1363→          </p>
+  1364→          <div className="grid sm:grid-cols-3 gap-4">
+  1365→            {[
+  1366→              { icon: Users, title: 'Qui', desc: 'Utilisateur, rôle, département, appareil, adresse IP' },
+  1367→              { icon: Clock, title: 'Quand', desc: 'Horodatage précis (timezone locale + UTC)' },
+  1368→              { icon: FileText, title: 'Quoi', desc: 'Action effectuée, données modifiées (avant/après)' },
+  1369→            ].map((item, i) => (
+  1370→              <div key={i} className="text-center p-4 rounded-lg bg-muted/50">
+  1371→                <item.icon className="w-6 h-6 mx-auto mb-2 text-primary" />
+  1372→                <h4 className="font-semibold text-sm">{item.title}</h4>
+  1373→                <p className="text-xs text-muted-foreground mt-1">{item.desc}</p>
+  1374→              </div>
+  1375→            ))}
+  1376→          </div>
+  1377→        </CardContent>
+  1378→      </Card>
+  1379→
+  1380→      <SubTitle title="8.4 Sauvegarde et Récupération" />
+  1381→      <div className="grid sm:grid-cols-2 gap-4">
+  1382→        {[
+  1383→          { title: 'Backup Local Quotidien', desc: 'Sauvegarde automatique quotidienne sur l\'appareil. Rétention de 30 jours. Chiffrée.' },
+  1384→          { title: 'Backup Cloud Hebdomadaire', desc: 'Sauvegarde chiffrée sur le cloud (AWS S3). Multi-région. Rétention 90 jours.' },
+  1385→          { title: 'Restauration en 1 Clic', desc: 'Restauration complète ou sélective depuis n\'importe quel backup. Guidée pas à pas.' },
+  1386→          { title: 'Disaster Recovery', desc: 'Plan de reprise d\'activité : RTO &lt; 4h, RPO &lt; 1h. Testé trimestriellement.' },
+  1387→        ].map((item, i) => (
+  1388→          <FeatureCard key={i} icon={HardDrive} {...item} status="high" />
+  1389→        ))}
+  1390→      </div>
+  1391→    </div>
+  1392→  )
+  1393→}
+  1394→
+  1395→/* ─────────────────────────────────────────────
+  1396→   TAB 9: PLANNING
+  1397→   ───────────────────────────────────────────── */
+  1398→function SectionPlanning() {
+  1399→  return (
+  1400→    <div className="space-y-6">
+  1401→      <SectionTitle icon={CalendarDays} title="Planning de Développement" subtitle="Roadmap en 3 phases sur 9 mois" />
+  1402→
+  1403→      <div className="grid lg:grid-cols-3 gap-6">
+  1404→        <PhaseCard
+  1405→          phase="PHASE 1"
+  1406→          title="MVP - Fondations"
+  1407→          duration="Mois 1-3"
+  1408→          progress={33}
+  1409→          items={[
+  1410→            'Infrastructure multi-tenant et base de données',
+  1411→            'Application Android Patient (inscription, RDV, dossier)',
+  1412→            'Application Android Personnel (consultations, ordonnances)',
+  1413→            'Module Gestion des Patients',
+  1414→            'Module Dossiers Médicaux (DME)',
+  1415→            'Module Consultations',
+  1416→            'Module Ordonnances',
+  1417→            'Synchronisation offline (core engine)',
+  1418→            'Intégration Mobile Money (MTN, Orange)',
+  1419→            'Notifications SMS basiques',
+  1420→            'Dashboard Web Admin (basique)',
+  1421→            'Authentification (JWT + PIN)',
+  1422→            'Déploiement dans 3 hôpitaux pilotes',
+  1423→          ]}
+  1424→        />
+  1425→        <PhaseCard
+  1426→          phase="PHASE 2"
+  1427→          title="Fonctionnalités Avancées"
+  1428→          duration="Mois 4-6"
+  1429→          progress={66}
+  1430→          items={[
+  1431→            'Module Laboratoire complet',
+  1432→            'Module Pharmacie et Gestion des Stocks',
+  1433→            'Module Facturation avancée',
+  1434→            'Module Hospitalisation',
+  1435→            'Module Urgences avec triage',
+  1436→            'Module Maternité et Néonatologie',
+  1437→            'Module Bloc Opératoire',
+  1438→            'Module RH (personnel, pointage)',
+  1439→            'Application Android Admin complète',
+  1440→            'Synchronisation avancée (CRDT, résolution conflits)',
+  1441→            'Multi-langues (FR, EN, AR + 4 langues locales)',
+  1442→            'Intégration M-Pesa, Wave + autres Mobile Money',
+  1443→            'Rapports et tableaux de bord avancés',
+  1444→            'Messagerie interne',
+  1445→            'Déploiement dans 50 hôpitaux',
+  1446→          ]}
+  1447→        />
+  1448→        <PhaseCard
+  1449→          phase="PHASE 3"
+  1450→          title="IA et Expansion"
+  1451→          duration="Mois 7-9"
+  1452→          progress={100}
+  1453→          items={[
+  1454→            'IA : Aide au diagnostic (symptômes → pathologies probables)',
+  1455→            'IA : Prédiction de risques (réadmission, complications)',
+  1456→            'IA : Optimisation du planning (prédiction de fréquentation)',
+  1457→            'IA : Analyse des stocks et prévision de commande',
+  1458→            'Module Imagerie (DICOM viewer, IA radiologie)',
+  1459→            'Interopérabilité HL7 FHIR complète',
+  1460→            'Téléconsultation vidéo/audio intégrée',
+  1461→            'USSD pour les patients sans smartphone',
+  1462→            'Portail Web Patient (responsive)',
+  1463→            'API ouverte pour intégrations tierces',
+  1464→            'Marketplace de modules (extensions)',
+  1465→            'Conformité complète (OHADA, CEDEAO, UA)',
+  1466→            'Certification ISO 27001 (sécurité)',
+  1467→            'Déploiement dans 500+ hôpitaux',
+  1468→            'Expansion dans 10+ pays africains',
+  1469→          ]}
+  1470→        />
+  1471→      </div>
+  1472→
+  1473→      <SubTitle title="9.1 Jalons Critiques" />
+  1474→      <Card>
+  1475→        <CardContent className="pt-6">
+  1476→          <div className="relative">
+  1477→            <div className="absolute left-4 top-0 bottom-0 w-px bg-border" />
+  1478→            <div className="space-y-6">
+  1479→              {[
+  1480→                { date: 'Mois 1', title: 'Alpha Interne', desc: 'Première version testable en interne. Core engine + auth + patients + consultations.' },
+  1481→                { date: 'Mois 2', title: 'Bêta Privée', desc: 'Déploiement dans 1 hôpital pilote. Tests réels avec patients et personnel.' },
+  1482→                { date: 'Mois 3', title: 'Lancement MVP', desc: 'Version MVP stable. 3 hôpitaux pilotes. Modules essentiels opérationnels.' },
+  1483→                { date: 'Mois 5', title: 'Version Complète', desc: 'Tous les 16 modules opérationnels. 50 hôpitaux en production.' },
+  1484→                { date: 'Mois 7', title: 'Version IA', desc: 'Fonctionnalités IA intégrées. Téléconsultation. Interopérabilité FHIR.' },
+  1485→                { date: 'Mois 9', title: 'Lancement Continental', desc: '500+ hôpitaux. 10+ pays. Marketplace de modules. Certification ISO 27001.' },
+  1486→              ].map((milestone, i) => (
+  1487→                <div key={i} className="flex gap-6 relative">
+  1488→                  <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0 z-10">
+  1489→                    <span className="text-primary-foreground text-xs font-bold">{i + 1}</span>
+  1490→                  </div>
+  1491→                  <div className="pb-2">
+  1492→                    <Badge variant="outline" className="mb-1 text-xs">{milestone.date}</Badge>
+  1493→                    <h4 className="font-semibold">{milestone.title}</h4>
+  1494→                    <p className="text-sm text-muted-foreground mt-0.5">{milestone.desc}</p>
+  1495→                  </div>
+  1496→                </div>
+  1497→              ))}
+  1498→            </div>
+  1499→          </div>
+  1500→        </CardContent>
+  1501→      </Card>
+  1502→    </div>
+  1503→  )
+  1504→}
+  1505→
+  1506→/* ─────────────────────────────────────────────
+  1507→   TAB 10: BUDGET & RESSOURCES
+  1508→   ───────────────────────────────────────────── */
+  1509→function SectionBudget() {
+  1510→  return (
+  1511→    <div className="space-y-6">
+  1512→      <SectionTitle icon={DollarSign} title="Budget et Ressources" subtitle="Estimation des coûts et composition de l'équipe" />
+  1513→
+  1514→      <SubTitle title="10.1 Équipe de Développement" />
+  1515→      <Card>
+  1516→        <CardContent className="pt-6">
+  1517→          <SpecTable
+  1518→            headers={['Rôle', 'Nombre', 'Durée', 'Coût/Mois (USD)']}
+  1519→            rows={[
+  1520→              ['Chef de Projet / Product Owner', '1', '9 mois', '$4 000'],
+  1521→              ['Architecte Backend (NestJS)', '2', '9 mois', '$3 500'],
+  1522→              ['Développeur Backend', '3', '9 mois', '$2 500'],
+  1523→              ['Développeur Android (Kotlin)', '3', '9 mois', '$3 000'],
+  1524→              ['Développeur Frontend (Next.js)', '2', '9 mois', '$2 500'],
+  1525→              ['Designer UI/UX', '1', '6 mois', '$2 500'],
+  1526→              ['Ingénieur QA / Testeur', '2', '6 mois', '$1 800'],
+  1527→              ['DevOps / SRE', '1', '9 mois', '$3 000'],
+  1528→              ['Spécialiste Sécurité', '1', '3 mois', '$4 000'],
+  1529→              ['Expert IA/ML', '1', '3 mois', '$4 500'],
+  1530→              ['Chargé de Déploiement Terrain', '2', '6 mois', '$1 500'],
+  1531→            ]}
+  1532→          />
+  1533→        </CardContent>
+  1534→      </Card>
+  1535→
+  1536→      <SubTitle title="10.2 Budget Prévisionnel" />
+  1537→      <div className="grid sm:grid-cols-3 gap-4">
+  1538→        <Card className="text-center">
+  1539→          <CardContent className="pt-6">
+  1540→            <div className="text-3xl font-bold text-primary">$580 000</div>
+  1541→            <p className="text-sm text-muted-foreground mt-1">Phase 1 (Mois 1-3)</p>
+  1542→            <Separator className="my-3" />
+  1543→            <p className="text-xs text-muted-foreground">Développement MVP + Infrastructure + Pilotes</p>
+  1544→          </CardContent>
+  1545→        </Card>
+  1546→        <Card className="text-center">
+  1547→          <CardContent className="pt-6">
+  1548→            <div className="text-3xl font-bold text-amber-600">$720 000</div>
+  1549→            <p className="text-sm text-muted-foreground mt-1">Phase 2 (Mois 4-6)</p>
+  1550→            <Separator className="my-3" />
+  1551→            <p className="text-xs text-muted-foreground">Modules avancés + Multi-langues + Déploiement 50 hôpitaux</p>
+  1552→          </CardContent>
+  1553→        </Card>
+  1554→        <Card className="text-center">
+  1555→          <CardContent className="pt-6">
+  1556→            <div className="text-3xl font-bold text-emerald-600">$900 000</div>
+  1557→            <p className="text-sm text-muted-foreground mt-1">Phase 3 (Mois 7-9)</p>
+  1558→            <Separator className="my-3" />
+  1559→            <p className="text-xs text-muted-foreground">IA + Expansion continentale + Certification</p>
+  1560→          </CardContent>
+  1561→        </Card>
+  1562→      </div>
+  1563→
+  1564→      <Card className="nya-gradient text-white">
+  1565→        <CardContent className="pt-6 text-center">
+  1566→          <p className="text-white/70 text-sm mb-1">Budget Total Projet</p>
+  1567→          <div className="text-4xl sm:text-5xl font-bold text-white">$2.2 Millions USD</div>
+  1568→          <p className="text-white/60 text-sm mt-3">Pour 9 mois de développement complet, de l&apos;alpha au lancement continental</p>
+  1569→        </CardContent>
+  1570→      </Card>
+  1571→
+  1572→      <SubTitle title="10.3 Retour sur Investissement" />
+  1573→      <Card>
+  1574→        <CardContent className="pt-6">
+  1575→          <SpecTable
+  1576→            headers={['Scénario', 'Hôpitaux (An 1)', 'Hôpitaux (An 2)', 'Hôpitaux (An 3)', 'CA Cumulé', 'ROI']}
+  1577→            rows={[
+  1578→              ['Conservateur', '50', '200', '500', '$1.8M', '8 mois'],
+  1579→              ['Modéré', '100', '500', '1 500', '$5.4M', '5 mois'],
+  1580→              ['Optimiste', '200', '1 000', '3 000', '$12.6M', '3 mois'],
+  1581→            ]}
+  1582→          />
+  1583→          <div className="mt-4 p-3 rounded-lg bg-muted/50 text-sm text-muted-foreground">
+  1584→            <p>
+  1585→              <strong className="text-foreground">Hypothèses :</strong> Prix moyen de $2 000/an par hôpital.
+  1586→              Revenus récurrents (SaaS). Upsell modules premium et marketplace.
+  1587→              Coût d&apos;acquisition client estimé à $200 par hôpital (démonstrations terrain).
+  1588→            </p>
+  1589→          </div>
+  1590→        </CardContent>
+  1591→      </Card>
+  1592→
+  1593→      <SubTitle title="10.4 Infrastructure et Coûts Récurrents" />
+  1594→      <SpecTable
+  1595→        headers={['Poste', 'Coût Mensuel', 'Notes']}
+  1596→        rows={[
+  1597→          ['Serveurs Cloud (AWS Africa)', '$2 000 - $5 000', 'Scale selon nombre d\'utilisateurs'],
+  1598→          ['CDN et Distribution', '$500 - $1 500', 'Akamai ou CloudFront pour l\'Afrique'],
+  1599→          ['SMS (Twilio + locaux)', '$1 000 - $3 000', 'Dépend du volume de notifications'],
+  1600→          ['Mobile Money API Fees', '$500 - $1 000', 'Frais de transaction des opérateurs'],
+  1601→          ['SSL et Sécurité', '$200 - $500', 'Certificats, WAF, monitoring sécurité'],
+  1602→          ['Monitoring et Alertes', '$300 - $800', 'Datadog ou équivalent'],
+  1603→          ['Support et Maintenance', '$5 000 - $10 000', 'Équipe de support technique 24/7'],
+  1604→          ['Total Estimé', '$9 500 - $21 800', 'Scalable selon la croissance'],
+  1605→        ]}
+  1606→      />
+  1607→    </div>
+  1608→  )
+  1609→}
+  1610→
+  1611→/* ─────────────────────────────────────────────
+  1612→   MAIN PAGE COMPONENT
+  1613→   ───────────────────────────────────────────── */
+  1614→const tabs = [
+  1615→  { value: 'vue-ensemble', label: 'Vue d\'Ensemble', icon: Eye },
+  1616→  { value: 'marche', label: 'Analyse Marché', icon: BookOpen },
+  1617→  { value: 'architecture', label: 'Architecture', icon: Server },
+  1618→  { value: 'multi-tenant', label: 'Multi-Tenant', icon: Building2 },
+  1619→  { value: 'modules', label: 'Modules (16)', icon: Layers },
+  1620→  { value: 'android', label: 'Android Apps', icon: Smartphone },
+  1621→  { value: 'adaptations', label: 'Adaptations Afrique', icon: Globe },
+  1622→  { value: 'securite', label: 'Sécurité', icon: Shield },
+  1623→  { value: 'planning', label: 'Planning', icon: CalendarDays },
+  1624→  { value: 'budget', label: 'Budget', icon: DollarSign },
+  1625→] as const
+  1626→
+  1627→export default function Home() {
+  1628→  const [activeTab, setActiveTab] = useState('vue-ensemble')
+  1629→
+  1630→  return (
+  1631→    <div className="min-h-screen flex flex-col bg-background">
+  1632→      {/* Hero */}
+  1633→      <HeroSection />
+  1634→
+  1635→      {/* Main Content */}
+  1636→      <main className="flex-1">
+  1637→        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  1638→          {/* Tab Navigation */}
+  1639→          <Tabs value={activeTab} onValueChange={setActiveTab}>
+  1640→            <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm pb-4 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 border-b mb-8">
+  1641→              <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+  1642→                <TabsList className="inline-flex h-auto gap-1 bg-transparent p-0">
+  1643→                  {tabs.map((tab) => (
+  1644→                    <TabsTrigger
+  1645→                      key={tab.value}
+  1646→                      value={tab.value}
+  1647→                      className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm whitespace-nowrap"
+  1648→                    >
+  1649→                      <tab.icon className="w-3.5 h-3.5" />
+  1650→                      <span className="hidden sm:inline">{tab.label}</span>
+  1651→                    </TabsTrigger>
+  1652→                  ))}
+  1653→                </TabsList>
+  1654→              </div>
+  1655→            </div>
+  1656→
+  1657→            {/* Tab Content */}
+  1658→            <TabsContent value="vue-ensemble"><SectionVueEnsemble /></TabsContent>
+  1659→            <TabsContent value="marche"><SectionMarche /></TabsContent>
+  1660→            <TabsContent value="architecture"><SectionArchitecture /></TabsContent>
+  1661→            <TabsContent value="multi-tenant"><SectionMultiTenant /></TabsContent>
+  1662→            <TabsContent value="modules"><SectionModules /></TabsContent>
+  1663→            <TabsContent value="android"><SectionAndroid /></TabsContent>
+  1664→            <TabsContent value="adaptations"><SectionAdaptations /></TabsContent>
+  1665→            <TabsContent value="securite"><SectionSecurite /></TabsContent>
+  1666→            <TabsContent value="planning"><SectionPlanning /></TabsContent>
+  1667→            <TabsContent value="budget"><SectionBudget /></TabsContent>
+  1668→          </Tabs>
+  1669→        </div>
+  1670→      </main>
+  1671→
+  1672→      {/* Footer */}
+  1673→      <footer className="nya-gradient text-white mt-auto">
+  1674→        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  1675→          <div className="grid sm:grid-cols-3 gap-6">
+  1676→            <div>
+  1677→              <div className="flex items-center gap-2 mb-3">
+  1678→                <Image src="/nya-logo.png" alt="NYA Santé" width={32} height={32} className="rounded-lg" />
+  1679→                <span className="font-bold text-lg">NYA Santé</span>
+  1680→              </div>
+  1681→              <p className="text-white/70 text-sm">
+  1682→                Plateforme de gestion hospitalière nouvelle génération, conçue pour l&apos;Afrique.
+  1683→              </p>
+  1684→            </div>
+  1685→            <div>
+  1686→              <h4 className="font-semibold mb-3">Cahier de Charges</h4>
+  1687→              <ul className="space-y-1.5 text-sm text-white/70">
+  1688→                <li>10 sections détaillées</li>
+  1689→                <li>16 modules fonctionnels</li>
+  1690→                <li>3 applications Android</li>
+  1691→                <li>Architecture Offline-First</li>
+  1692→              </ul>
+  1693→            </div>
+  1694→            <div>
+  1695→              <h4 className="font-semibold mb-3">Document</h4>
+  1696→              <ul className="space-y-1.5 text-sm text-white/70">
+  1697→                <li>Version : 1.0</li>
+  1698→                <li>Date : {new Date().toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' })}</li>
+  1699→                <li>Statut : En cours de rédaction</li>
+  1700→                <li>Classification : Confidentiel</li>
+  1701→              </ul>
+  1702→            </div>
+  1703→          </div>
+  1704→          <Separator className="my-6 bg-white/20" />
+  1705→          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-white/60">
+  1706→            <p>© {new Date().getFullYear()} NYA Santé — Tous droits réservés</p>
+  1707→            <p>Conçu avec ❤️ pour l&apos;Afrique</p>
+  1708→          </div>
+  1709→        </div>
+  1710→      </footer>
+  1711→    </div>
+  1712→  )
+  1713→}
