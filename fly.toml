@@ -1,0 +1,54 @@
+# ═══════════════════════════════════════════════════════
+# NYA Santé - fly.io Configuration
+# ═══════════════════════════════════════════════════════
+
+app = "nya-sante"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "3000"
+  NODE_ENV = "production"
+
+# --- Primary region (closest to Africa: Paris) ---
+[deploy]
+  regions = ["cdg"]  # Paris, CDG - best latency for Africa
+
+# --- Persistent Volume for SQLite database ---
+[[mounts]]
+  source = "nya_sante_data"
+  destination = "/data"
+
+# --- HTTP → HTTPS redirect ---
+[[services]]
+  internal_port = 3000
+  protocol = "tcp"
+
+  [[services.ports]]
+    force_https = true
+    port = 80
+    handlers = ["http"]
+
+  [[services.ports]]
+    port = 443
+    handlers = ["tls", "http"]
+
+  [services.concurrency]
+    type = "requests"
+    hard_limit = 250
+    soft_limit = 200
+
+# --- Auto-scaling ---
+[[vm]]
+  memory = "512mb"
+  cpu_kind = "shared"
+  cpus = 1
+
+# --- Health check ---
+[checks]
+  [checks.alive]
+    type = "tcp"
+    interval = "15s"
+    timeout = "5s"
+    grace_period = "5s"

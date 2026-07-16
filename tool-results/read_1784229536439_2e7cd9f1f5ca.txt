@@ -1,0 +1,1938 @@
+     1→'use client'
+     2→
+     3→import { useState, useEffect, useCallback } from 'react'
+     4→import { toast } from 'sonner'
+     5→import { useAppStore } from '@/lib/store'
+     6→import { Toaster } from '@/components/ui/sonner'
+     7→
+     8→import { Button } from '@/components/ui/button'
+     9→import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+    10→import { Input } from '@/components/ui/input'
+    11→import { Label } from '@/components/ui/label'
+    12→import { Badge } from '@/components/ui/badge'
+    13→import { Separator } from '@/components/ui/separator'
+    14→import { Skeleton } from '@/components/ui/skeleton'
+    15→import { ScrollArea } from '@/components/ui/scroll-area'
+    16→import {
+    17→  Table,
+    18→  TableBody,
+    19→  TableCell,
+    20→  TableHead,
+    21→  TableHeader,
+    22→  TableRow,
+    23→} from '@/components/ui/table'
+    24→import {
+    25→  Dialog,
+    26→  DialogContent,
+    27→  DialogHeader,
+    28→  DialogTitle,
+    29→  DialogFooter,
+    30→} from '@/components/ui/dialog'
+    31→import {
+    32→  Sheet,
+    33→  SheetContent,
+    34→  SheetTrigger,
+    35→  SheetTitle,
+    36→} from '@/components/ui/sheet'
+    37→import {
+    38→  Select,
+    39→  SelectContent,
+    40→  SelectItem,
+    41→  SelectTrigger,
+    42→  SelectValue,
+    43→} from '@/components/ui/select'
+    44→import {
+    45→  LayoutDashboard,
+    46→  Heart,
+    47→  Building2,
+    48→  Users,
+    49→  Calendar,
+    50→  Stethoscope,
+    51→  Receipt,
+    52→  Pill,
+    53→  Settings,
+    54→  LogOut,
+    55→  Menu,
+    56→  Loader2,
+    57→  Search,
+    58→  Plus,
+    59→  ChevronRight,
+    60→  Phone,
+    61→  Lock,
+    62→  UserCircle,
+    63→  TrendingUp,
+    64→  DollarSign,
+    65→  Activity,
+    66→  AlertTriangle,
+    67→  FileText,
+    68→  Clock,
+    69→  CheckCircle2,
+    70→  XCircle,
+    71→  Eye,
+    72→} from 'lucide-react'
+    73→
+    74→/* ═══════════════════════════════════════════════════
+    75→   HELPERS
+    76→   ═══════════════════════════════════════════════════ */
+    77→
+    78→const fmtCurrency = (amount: number) =>
+    79→  new Intl.NumberFormat('fr-FR').format(amount) + ' FCFA'
+    80→
+    81→const fmtDate = (date: string | Date) =>
+    82→  new Date(date).toLocaleDateString('fr-FR', {
+    83→    day: '2-digit',
+    84→    month: 'short',
+    85→    year: 'numeric',
+    86→  })
+    87→
+    88→const fmtDateTime = (date: string | Date) =>
+    89→  new Date(date).toLocaleDateString('fr-FR', {
+    90→    day: '2-digit',
+    91→    month: 'short',
+    92→    year: 'numeric',
+    93→    hour: '2-digit',
+    94→    minute: '2-digit',
+    95→  })
+    96→
+    97→const fmtTime = (date: string | Date) =>
+    98→  new Date(date).toLocaleTimeString('fr-FR', {
+    99→    hour: '2-digit',
+   100→    minute: '2-digit',
+   101→  })
+   102→
+   103→const STATUS_APPOINTMENT: Record<string, { label: string; className: string }> = {
+   104→  en_attente: { label: 'En attente', className: 'bg-yellow-100 text-yellow-800 border-yellow-300' },
+   105→  confirme: { label: 'Confirmé', className: 'bg-blue-100 text-blue-800 border-blue-300' },
+   106→  en_cours: { label: 'En cours', className: 'bg-orange-100 text-orange-800 border-orange-300' },
+   107→  termine: { label: 'Terminé', className: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
+   108→  annule: { label: 'Annulé', className: 'bg-red-100 text-red-800 border-red-300' },
+   109→}
+   110→
+   111→const STATUS_INVOICE: Record<string, { label: string; className: string }> = {
+   112→  impayee: { label: 'Impayée', className: 'bg-red-100 text-red-800 border-red-300' },
+   113→  partiellement_payee: { label: 'Partielle', className: 'bg-yellow-100 text-yellow-800 border-yellow-300' },
+   114→  payee: { label: 'Payée', className: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
+   115→}
+   116→
+   117→const BLOOD_TYPES = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']
+   118→const DEPT_TYPES = ['clinique', 'chirurgical', 'laboratoire', 'imagerie', 'pharmacie', 'administration', 'urgence', 'maternite', 'pediatrie', 'autre']
+   119→
+   120→const NAV_ITEMS = [
+   121→  { key: 'dashboard', label: 'Tableau de bord', icon: LayoutDashboard },
+   122→  { key: 'patients', label: 'Patients', icon: Heart },
+   123→  { key: 'departments', label: 'Départements', icon: Building2 },
+   124→  { key: 'staff', label: 'Personnel', icon: Users },
+   125→  { key: 'appointments', label: 'Rendez-vous', icon: Calendar },
+   126→  { key: 'consultations', label: 'Consultations', icon: Stethoscope },
+   127→  { key: 'invoices', label: 'Facturation', icon: Receipt },
+   128→  { key: 'medications', label: 'Pharmacie', icon: Pill },
+   129→  { key: 'settings', label: 'Paramètres', icon: Settings },
+   130→]
+   131→
+   132→/* ═══════════════════════════════════════════════════
+   133→   LOGIN SCREEN
+   134→   ═══════════════════════════════════════════════════ */
+   135→
+   136→function LoginScreen() {
+   137→  const [phone, setPhone] = useState('655443322')
+   138→  const [pin, setPin] = useState('123456')
+   139→  const [loading, setLoading] = useState(false)
+   140→  const { setUser, setCurrentView } = useAppStore()
+   141→
+   142→  const handleLogin = async (e: React.FormEvent) => {
+   143→    e.preventDefault()
+   144→    setLoading(true)
+   145→    try {
+   146→      const res = await fetch('/api/auth', {
+   147→        method: 'POST',
+   148→        headers: { 'Content-Type': 'application/json' },
+   149→        body: JSON.stringify({ phone, pin }),
+   150→      })
+   151→      if (!res.ok) {
+   152→        const data = await res.json()
+   153→        toast.error(data.error || 'Identifiants incorrects')
+   154→        return
+   155→      }
+   156→      const user = await res.json()
+   157→      setUser(user)
+   158→      setCurrentView('dashboard')
+   159→      toast.success(`Bienvenue, Dr. ${user.lastName} !`)
+   160→    } catch {
+   161→      toast.error('Erreur de connexion au serveur')
+   162→    } finally {
+   163→      setLoading(false)
+   164→    }
+   165→  }
+   166→
+   167→  return (
+   168→    <div className="min-h-screen nya-gradient nya-pattern flex items-center justify-center p-4">
+   169→      <Card className="w-full max-w-md shadow-2xl border-0 py-8">
+   170→        <CardHeader className="items-center gap-4 pb-2">
+   171→          <div className="w-20 h-20 rounded-2xl bg-emerald-50 flex items-center justify-center overflow-hidden border-2 border-emerald-100">
+   172→            <img src="/nya-logo.png" alt="NYA Santé" className="w-16 h-16 object-contain" />
+   173→          </div>
+   174→          <div className="text-center">
+   175→            <CardTitle className="text-xl font-bold text-emerald-900">
+   176→              Clinique Centrale NYA
+   177→            </CardTitle>
+   178→            <p className="text-sm text-muted-foreground mt-1">
+   179→              Système de Gestion Hospitalière
+   180→            </p>
+   181→          </div>
+   182→        </CardHeader>
+   183→        <CardContent>
+   184→          <form onSubmit={handleLogin} className="space-y-5">
+   185→            <div className="space-y-2">
+   186→              <Label htmlFor="phone" className="text-sm font-medium">
+   187→                <Phone className="inline w-4 h-4 mr-1 -mt-0.5" />
+   188→                Téléphone
+   189→              </Label>
+   190→              <Input
+   191→                id="phone"
+   192→                type="tel"
+   193→                value={phone}
+   194→                onChange={(e) => setPhone(e.target.value)}
+   195→                placeholder="6XXXXXXXX"
+   196→                className="h-11"
+   197→              />
+   198→            </div>
+   199→            <div className="space-y-2">
+   200→              <Label htmlFor="pin" className="text-sm font-medium">
+   201→                <Lock className="inline w-4 h-4 mr-1 -mt-0.5" />
+   202→                Code PIN
+   203→              </Label>
+   204→              <Input
+   205→                id="pin"
+   206→                type="password"
+   207→                value={pin}
+   208→                onChange={(e) => setPin(e.target.value)}
+   209→                placeholder="••••••"
+   210→                className="h-11"
+   211→              />
+   212→            </div>
+   213→            <Button
+   214→              type="submit"
+   215→              className="w-full h-11 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold"
+   216→              disabled={loading}
+   217→            >
+   218→              {loading ? (
+   219→                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+   220→              ) : (
+   221→                <Lock className="w-4 h-4 mr-2" />
+   222→              )}
+   223→              Se connecter
+   224→            </Button>
+   225→          </form>
+   226→          <p className="text-xs text-center text-muted-foreground mt-6">
+   227→            Compte démo : 655443322 / 123456 (Dr. Amina Nya)
+   228→          </p>
+   229→        </CardContent>
+   230→      </Card>
+   231→    </div>
+   232→  )
+   233→}
+   234→
+   235→/* ═══════════════════════════════════════════════════
+   236→   SIDEBAR
+   237→   ═══════════════════════════════════════════════════ */
+   238→
+   239→function SidebarContent({ onClose }: { onClose?: () => void }) {
+   240→  const { currentView, setCurrentView, user, setUser } = useAppStore()
+   241→
+   242→  const handleNav = (key: string) => {
+   243→    setCurrentView(key)
+   244→    onClose?.()
+   245→  }
+   246→
+   247→  const handleLogout = () => {
+   248→    setUser(null)
+   249→    setCurrentView('dashboard')
+   250→    toast.success('Déconnexion réussie')
+   251→  }
+   252→
+   253→  return (
+   254→    <div className="flex flex-col h-full bg-emerald-900 text-white">
+   255→      {/* Logo */}
+   256→      <div className="p-5 flex items-center gap-3 border-b border-emerald-800">
+   257→        <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center overflow-hidden">
+   258→          <img src="/nya-logo.png" alt="NYA" className="w-8 h-8 object-contain" />
+   259→        </div>
+   260→        <div className="flex-1 min-w-0">
+   261→          <p className="font-bold text-sm leading-tight truncate">Clinique Centrale NYA</p>
+   262→          <p className="text-emerald-300 text-xs">Système de Gestion</p>
+   263→        </div>
+   264→      </div>
+   265→
+   266→      {/* Navigation */}
+   267→      <ScrollArea className="flex-1 py-3 px-3">
+   268→        <nav className="space-y-1">
+   269→          {NAV_ITEMS.map((item) => {
+   270→            const Icon = item.icon
+   271→            const isActive = currentView === item.key
+   272→            return (
+   273→              <button
+   274→                key={item.key}
+   275→                onClick={() => handleNav(item.key)}
+   276→                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${
+   277→                  isActive
+   278→                    ? 'bg-emerald-700/60 text-white shadow-sm'
+   279→                    : 'text-emerald-200 hover:bg-emerald-800/60 hover:text-white'
+   280→                }`}
+   281→              >
+   282→                <Icon className="w-4.5 h-4.5 shrink-0" />
+   283→                <span className="truncate">{item.label}</span>
+   284→                {isActive && <ChevronRight className="w-4 h-4 ml-auto opacity-60" />}
+   285→              </button>
+   286→            )
+   287→          })}
+   288→        </nav>
+   289→      </ScrollArea>
+   290→
+   291→      {/* User info */}
+   292→      <div className="border-t border-emerald-800 p-4">
+   293→        <div className="flex items-center gap-3 mb-3">
+   294→          <div className="w-9 h-9 rounded-full bg-emerald-700 flex items-center justify-center shrink-0">
+   295→            <UserCircle className="w-5 h-5 text-emerald-200" />
+   296→          </div>
+   297→          <div className="flex-1 min-w-0">
+   298→            <p className="text-sm font-medium truncate">
+   299→              {user?.firstName} {user?.lastName}
+   300→            </p>
+   301→            <p className="text-xs text-emerald-400 truncate">
+   302→              {user?.role?.label || user?.role?.name}
+   303→            </p>
+   304→          </div>
+   305→        </div>
+   306→        <Button
+   307→          variant="ghost"
+   308→          size="sm"
+   309→          onClick={handleLogout}
+   310→          className="w-full justify-start text-emerald-300 hover:text-white hover:bg-emerald-800"
+   311→        >
+   312→          <LogOut className="w-4 h-4 mr-2" />
+   313→          Déconnexion
+   314→        </Button>
+   315→      </div>
+   316→    </div>
+   317→  )
+   318→}
+   319→
+   320→/* ═══════════════════════════════════════════════════
+   321→   LOADING SKELETON
+   322→   ═══════════════════════════════════════════════════ */
+   323→
+   324→function TableSkeleton({ rows = 5, cols = 5 }: { rows?: number; cols?: number }) {
+   325→  return (
+   326→    <div className="space-y-3 p-4">
+   327→      {Array.from({ length: rows }).map((_, r) => (
+   328→        <div key={r} className="flex gap-4">
+   329→          {Array.from({ length: cols }).map((_, c) => (
+   330→            <Skeleton key={c} className="h-8 flex-1" />
+   331→          ))}
+   332→        </div>
+   333→      ))}
+   334→    </div>
+   335→  )
+   336→}
+   337→
+   338→function CardSkeleton() {
+   339→  return (
+   340→    <Card className="p-6">
+   341→      <div className="flex items-center justify-between mb-3">
+   342→        <Skeleton className="h-4 w-24" />
+   343→        <Skeleton className="h-8 w-8 rounded-lg" />
+   344→      </div>
+   345→      <Skeleton className="h-8 w-16 mb-2" />
+   346→      <Skeleton className="h-3 w-32" />
+   347→    </Card>
+   348→  )
+   349→}
+   350→
+   351→/* ═══════════════════════════════════════════════════
+   352→   DASHBOARD VIEW
+   353→   ═══════════════════════════════════════════════════ */
+   354→
+   355→function DashboardView() {
+   356→  const [loading, setLoading] = useState(true)
+   357→  const [stats, setStats] = useState<Record<string, number> | null>(null)
+   358→  const [recentPatients, setRecentPatients] = useState<any[]>([])
+   359→  const [todayAppts, setTodayAppts] = useState<any[]>([])
+   360→
+   361→  useEffect(() => {
+   362→    const load = async () => {
+   363→      try {
+   364→        const res = await fetch('/api/dashboard')
+   365→        const data = await res.json()
+   366→        setStats(data.stats)
+   367→        setRecentPatients(data.recentPatients || [])
+   368→        setTodayAppts(data.todayAppointments || [])
+   369→      } catch {
+   370→        toast.error('Erreur de chargement du tableau de bord')
+   371→      } finally {
+   372→        setLoading(false)
+   373→      }
+   374→    }
+   375→    load()
+   376→  }, [])
+   377→
+   378→  const kpiCards = [
+   379→    {
+   380→      label: 'Total Patients',
+   381→      value: stats?.totalPatients ?? 0,
+   382→      icon: Heart,
+   383→      bg: 'bg-emerald-50',
+   384→      iconBg: 'bg-emerald-100',
+   385→      iconColor: 'text-emerald-700',
+   386→    },
+   387→    {
+   388→      label: "RDV Aujourd'hui",
+   389→      value: stats?.todayAppointments ?? 0,
+   390→      icon: Calendar,
+   391→      bg: 'bg-blue-50',
+   392→      iconBg: 'bg-blue-100',
+   393→      iconColor: 'text-blue-700',
+   394→    },
+   395→    {
+   396→      label: 'Personnel Actif',
+   397→      value: stats?.totalStaff ?? 0,
+   398→      icon: Users,
+   399→      bg: 'bg-purple-50',
+   400→      iconBg: 'bg-purple-100',
+   401→      iconColor: 'text-purple-700',
+   402→    },
+   403→    {
+   404→      label: 'Revenus Totaux',
+   405→      value: stats?.totalRevenue ?? 0,
+   406→      icon: DollarSign,
+   407→      bg: 'bg-amber-50',
+   408→      iconBg: 'bg-amber-100',
+   409→      iconColor: 'text-amber-700',
+   410→      isCurrency: true,
+   411→    },
+   412→  ]
+   413→
+   414→  return (
+   415→    <div className="space-y-6 animate-fade-in-up">
+   416→      <div>
+   417→        <h1 className="text-2xl font-bold">Tableau de bord</h1>
+   418→        <p className="text-muted-foreground text-sm mt-1">Vue d&apos;ensemble de votre activité</p>
+   419→      </div>
+   420→
+   421→      {/* KPI Cards */}
+   422→      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+   423→        {loading
+   424→          ? Array.from({ length: 4 }).map((_, i) => <CardSkeleton key={i} />)
+   425→          : kpiCards.map((kpi) => {
+   426→              const Icon = kpi.icon
+   427→              return (
+   428→                <Card key={kpi.label} className="p-5 card-hover">
+   429→                  <CardContent className="p-0">
+   430→                    <div className="flex items-center justify-between mb-3">
+   431→                      <span className="text-sm text-muted-foreground font-medium">{kpi.label}</span>
+   432→                      <div className={`w-9 h-9 rounded-lg ${kpi.iconBg} flex items-center justify-center`}>
+   433→                        <Icon className={`w-4.5 h-4.5 ${kpi.iconColor}`} />
+   434→                      </div>
+   435→                    </div>
+   436→                    <p className="text-2xl font-bold">
+   437→                      {kpi.isCurrency ? fmtCurrency(kpi.value) : kpi.value.toLocaleString('fr-FR')}
+   438→                    </p>
+   439→                    {kpi.isCurrency && (
+   440→                      <p className="text-xs text-muted-foreground mt-1">Chiffre d&apos;affaires cumulé</p>
+   441→                    )}
+   442→                  </CardContent>
+   443→                </Card>
+   444→              )
+   445→            })}
+   446→      </div>
+   447→
+   448→      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+   449→        {/* Today's Appointments */}
+   450→        <Card>
+   451→          <CardHeader className="pb-3">
+   452→            <CardTitle className="text-base font-semibold flex items-center gap-2">
+   453→              <Clock className="w-4 h-4 text-emerald-600" />
+   454→              Rendez-vous du jour
+   455→            </CardTitle>
+   456→          </CardHeader>
+   457→          <CardContent>
+   458→            {loading ? (
+   459→              <TableSkeleton rows={3} cols={3} />
+   460→            ) : todayAppts.length === 0 ? (
+   461→              <div className="text-center py-8 text-muted-foreground text-sm">
+   462→                <Calendar className="w-8 h-8 mx-auto mb-2 opacity-40" />
+   463→                Aucun rendez-vous aujourd&apos;hui
+   464→              </div>
+   465→            ) : (
+   466→              <div className="space-y-2 max-h-80 overflow-y-auto">
+   467→                {todayAppts.map((appt: any) => {
+   468→                  const st = STATUS_APPOINTMENT[appt.status] || STATUS_APPOINTMENT.en_attente
+   469→                  return (
+   470→                    <div
+   471→                      key={appt.id}
+   472→                      className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+   473→                    >
+   474→                      <div className="text-center min-w-[48px]">
+   475→                        <p className="text-xs font-semibold text-emerald-700">{fmtTime(appt.date)}</p>
+   476→                      </div>
+   477→                      <div className="flex-1 min-w-0">
+   478→                        <p className="text-sm font-medium truncate">
+   479→                          {appt.patient?.firstName} {appt.patient?.lastName}
+   480→                        </p>
+   481→                        <p className="text-xs text-muted-foreground">
+   482→                          Dr. {appt.staff?.firstName} {appt.staff?.lastName}
+   483→                        </p>
+   484→                      </div>
+   485→                      <Badge variant="outline" className={st.className}>
+   486→                        {st.label}
+   487→                      </Badge>
+   488→                    </div>
+   489→                  )
+   490→                })}
+   491→              </div>
+   492→            )}
+   493→          </CardContent>
+   494→        </Card>
+   495→
+   496→        {/* Recent Patients */}
+   497→        <Card>
+   498→          <CardHeader className="pb-3">
+   499→            <CardTitle className="text-base font-semibold flex items-center gap-2">
+   500→              <Activity className="w-4 h-4 text-emerald-600" />
+   501→              Patients récents
+   502→            </CardTitle>
+   503→          </CardHeader>
+   504→          <CardContent>
+   505→            {loading ? (
+   506→              <TableSkeleton rows={5} cols={4} />
+   507→            ) : (
+   508→              <Table>
+   509→                <TableHeader>
+   510→                  <TableRow>
+   511→                    <TableHead className="text-xs">Dossier</TableHead>
+   512→                    <TableHead className="text-xs">Nom</TableHead>
+   513→                    <TableHead className="text-xs">Téléphone</TableHead>
+   514→                    <TableHead className="text-xs">Créé le</TableHead>
+   515→                  </TableRow>
+   516→                </TableHeader>
+   517→                <TableBody>
+   518→                  {recentPatients.map((p: any) => (
+   519→                    <TableRow key={p.id}>
+   520→                      <TableCell className="text-xs font-mono">{p.folderNumber}</TableCell>
+   521→                      <TableCell className="text-xs font-medium">
+   522→                        {p.firstName} {p.lastName}
+   523→                      </TableCell>
+   524→                      <TableCell className="text-xs">{p.phone}</TableCell>
+   525→                      <TableCell className="text-xs">{fmtDate(p.createdAt)}</TableCell>
+   526→                    </TableRow>
+   527→                  ))}
+   528→                  {recentPatients.length === 0 && (
+   529→                    <TableRow>
+   530→                      <TableCell colSpan={4} className="text-center text-muted-foreground text-sm py-8">
+   531→                        Aucun patient enregistré
+   532→                      </TableCell>
+   533→                    </TableRow>
+   534→                  )}
+   535→                </TableBody>
+   536→              </Table>
+   537→            )}
+   538→          </CardContent>
+   539→        </Card>
+   540→      </div>
+   541→    </div>
+   542→  )
+   543→}
+   544→
+   545→/* ═══════════════════════════════════════════════════
+   546→   PATIENTS VIEW
+   547→   ═══════════════════════════════════════════════════ */
+   548→
+   549→function PatientsView() {
+   550→  const [patients, setPatients] = useState<any[]>([])
+   551→  const [loading, setLoading] = useState(true)
+   552→  const [search, setSearch] = useState('')
+   553→  const [dialogOpen, setDialogOpen] = useState(false)
+   554→  const [saving, setSaving] = useState(false)
+   555→
+   556→  // Form state
+   557→  const [form, setForm] = useState({
+   558→    firstName: '', lastName: '', phone: '', email: '', dateOfBirth: '',
+   559→    gender: 'M', bloodType: '', address: '', city: '', allergies: '',
+   560→    emergencyContact: '', emergencyPhone: '', insuranceProvider: '', insuranceNumber: '',
+   561→  })
+   562→
+   563→  const loadPatients = useCallback(async () => {
+   564→    setLoading(true)
+   565→    try {
+   566→      const res = await fetch(`/api/patients?q=${encodeURIComponent(search)}`)
+   567→      const data = await res.json()
+   568→      setPatients(data.data || [])
+   569→    } catch {
+   570→      toast.error('Erreur de chargement des patients')
+   571→    } finally {
+   572→      setLoading(false)
+   573→    }
+   574→  }, [search])
+   575→
+   576→  useEffect(() => { loadPatients() }, [loadPatients])
+   577→
+   578→  const handleSave = async () => {
+   579→    if (!form.firstName || !form.lastName || !form.phone) {
+   580→      toast.error('Prénom, nom et téléphone sont requis')
+   581→      return
+   582→    }
+   583→    setSaving(true)
+   584→    try {
+   585→      const res = await fetch('/api/patients', {
+   586→        method: 'POST',
+   587→        headers: { 'Content-Type': 'application/json' },
+   588→        body: JSON.stringify(form),
+   589→      })
+   590→      if (!res.ok) {
+   591→        const data = await res.json()
+   592→        toast.error(data.error || 'Erreur lors de la création')
+   593→        return
+   594→      }
+   595→      toast.success('Patient créé avec succès')
+   596→      setDialogOpen(false)
+   597→      setForm({
+   598→        firstName: '', lastName: '', phone: '', email: '', dateOfBirth: '',
+   599→        gender: 'M', bloodType: '', address: '', city: '', allergies: '',
+   600→        emergencyContact: '', emergencyPhone: '', insuranceProvider: '', insuranceNumber: '',
+   601→      })
+   602→      loadPatients()
+   603→    } catch {
+   604→      toast.error('Erreur serveur')
+   605→    } finally {
+   606→      setSaving(false)
+   607→    }
+   608→  }
+   609→
+   610→  const updateForm = (field: string, value: string) =>
+   611→    setForm((prev) => ({ ...prev, [field]: value }))
+   612→
+   613→  return (
+   614→    <div className="space-y-6 animate-fade-in-up">
+   615→      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+   616→        <div>
+   617→          <h1 className="text-2xl font-bold">Patients</h1>
+   618→          <p className="text-muted-foreground text-sm mt-1">
+   619→            {patients.length} patient{patients.length > 1 ? 's' : ''} enregistré{patients.length > 1 ? 's' : ''}
+   620→          </p>
+   621→        </div>
+   622→        <Button
+   623→          onClick={() => setDialogOpen(true)}
+   624→          className="bg-emerald-700 hover:bg-emerald-800 text-white"
+   625→        >
+   626→          <Plus className="w-4 h-4 mr-2" />
+   627→          Nouveau Patient
+   628→        </Button>
+   629→      </div>
+   630→
+   631→      {/* Search */}
+   632→      <div className="relative max-w-md">
+   633→        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+   634→        <Input
+   635→          placeholder="Rechercher un patient..."
+   636→          value={search}
+   637→          onChange={(e) => setSearch(e.target.value)}
+   638→          className="pl-9"
+   639→        />
+   640→      </div>
+   641→
+   642→      {/* Table */}
+   643→      <Card>
+   644→        <CardContent className="p-0">
+   645→          {loading ? (
+   646→            <TableSkeleton rows={6} cols={7} />
+   647→          ) : (
+   648→            <Table>
+   649→              <TableHeader>
+   650→                <TableRow>
+   651→                  <TableHead className="text-xs">Dossier</TableHead>
+   652→                  <TableHead className="text-xs">Nom</TableHead>
+   653→                  <TableHead className="text-xs">Prénom</TableHead>
+   654→                  <TableHead className="text-xs">Téléphone</TableHead>
+   655→                  <TableHead className="text-xs">Sexe</TableHead>
+   656→                  <TableHead className="text-xs">Groupe Sanguin</TableHead>
+   657→                  <TableHead className="text-xs">Date Création</TableHead>
+   658→                </TableRow>
+   659→              </TableHeader>
+   660→              <TableBody>
+   661→                {patients.map((p: any) => (
+   662→                  <TableRow key={p.id}>
+   663→                    <TableCell className="text-xs font-mono font-medium">{p.folderNumber}</TableCell>
+   664→                    <TableCell className="text-xs font-medium">{p.lastName}</TableCell>
+   665→                    <TableCell className="text-xs">{p.firstName}</TableCell>
+   666→                    <TableCell className="text-xs">{p.phone}</TableCell>
+   667→                    <TableCell className="text-xs">{p.gender === 'M' ? 'Masculin' : 'Féminin'}</TableCell>
+   668→                    <TableCell className="text-xs">{p.bloodType || '—'}</TableCell>
+   669→                    <TableCell className="text-xs">{fmtDate(p.createdAt)}</TableCell>
+   670→                  </TableRow>
+   671→                ))}
+   672→                {patients.length === 0 && (
+   673→                  <TableRow>
+   674→                    <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
+   675→                      <Heart className="w-8 h-8 mx-auto mb-2 opacity-30" />
+   676→                      Aucun patient trouvé
+   677→                    </TableCell>
+   678→                  </TableRow>
+   679→                )}
+   680→              </TableBody>
+   681→            </Table>
+   682→          )}
+   683→        </CardContent>
+   684→      </Card>
+   685→
+   686→      {/* New Patient Dialog */}
+   687→      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+   688→        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+   689→          <DialogHeader>
+   690→            <DialogTitle>Nouveau Patient</DialogTitle>
+   691→          </DialogHeader>
+   692→          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+   693→            <div className="space-y-1.5">
+   694→              <Label className="text-xs">Prénom *</Label>
+   695→              <Input value={form.firstName} onChange={(e) => updateForm('firstName', e.target.value)} />
+   696→            </div>
+   697→            <div className="space-y-1.5">
+   698→              <Label className="text-xs">Nom *</Label>
+   699→              <Input value={form.lastName} onChange={(e) => updateForm('lastName', e.target.value)} />
+   700→            </div>
+   701→            <div className="space-y-1.5">
+   702→              <Label className="text-xs">Téléphone *</Label>
+   703→              <Input value={form.phone} onChange={(e) => updateForm('phone', e.target.value)} />
+   704→            </div>
+   705→            <div className="space-y-1.5">
+   706→              <Label className="text-xs">Email</Label>
+   707→              <Input type="email" value={form.email} onChange={(e) => updateForm('email', e.target.value)} />
+   708→            </div>
+   709→            <div className="space-y-1.5">
+   710→              <Label className="text-xs">Date de naissance</Label>
+   711→              <Input type="date" value={form.dateOfBirth} onChange={(e) => updateForm('dateOfBirth', e.target.value)} />
+   712→            </div>
+   713→            <div className="space-y-1.5">
+   714→              <Label className="text-xs">Sexe</Label>
+   715→              <Select value={form.gender} onValueChange={(v) => updateForm('gender', v)}>
+   716→                <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+   717→                <SelectContent>
+   718→                  <SelectItem value="M">Masculin</SelectItem>
+   719→                  <SelectItem value="F">Féminin</SelectItem>
+   720→                </SelectContent>
+   721→              </Select>
+   722→            </div>
+   723→            <div className="space-y-1.5">
+   724→              <Label className="text-xs">Groupe sanguin</Label>
+   725→              <Select value={form.bloodType} onValueChange={(v) => updateForm('bloodType', v)}>
+   726→                <SelectTrigger className="w-full"><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+   727→                <SelectContent>
+   728→                  {BLOOD_TYPES.map((bt) => (
+   729→                    <SelectItem key={bt} value={bt}>{bt}</SelectItem>
+   730→                  ))}
+   731→                </SelectContent>
+   732→              </Select>
+   733→            </div>
+   734→            <div className="space-y-1.5">
+   735→              <Label className="text-xs">Ville</Label>
+   736→              <Input value={form.city} onChange={(e) => updateForm('city', e.target.value)} />
+   737→            </div>
+   738→            <div className="space-y-1.5 sm:col-span-2">
+   739→              <Label className="text-xs">Adresse</Label>
+   740→              <Input value={form.address} onChange={(e) => updateForm('address', e.target.value)} />
+   741→            </div>
+   742→            <div className="space-y-1.5 sm:col-span-2">
+   743→              <Label className="text-xs">Allergies</Label>
+   744→              <Input value={form.allergies} onChange={(e) => updateForm('allergies', e.target.value)} placeholder="Séparer par des virgules" />
+   745→            </div>
+   746→            <div className="space-y-1.5">
+   747→              <Label className="text-xs">Contact d&apos;urgence</Label>
+   748→              <Input value={form.emergencyContact} onChange={(e) => updateForm('emergencyContact', e.target.value)} />
+   749→            </div>
+   750→            <div className="space-y-1.5">
+   751→              <Label className="text-xs">Tél. d&apos;urgence</Label>
+   752→              <Input value={form.emergencyPhone} onChange={(e) => updateForm('emergencyPhone', e.target.value)} />
+   753→            </div>
+   754→            <div className="space-y-1.5">
+   755→              <Label className="text-xs">Assurance</Label>
+   756→              <Input value={form.insuranceProvider} onChange={(e) => updateForm('insuranceProvider', e.target.value)} />
+   757→            </div>
+   758→            <div className="space-y-1.5">
+   759→              <Label className="text-xs">N° Assurance</Label>
+   760→              <Input value={form.insuranceNumber} onChange={(e) => updateForm('insuranceNumber', e.target.value)} />
+   761→            </div>
+   762→          </div>
+   763→          <DialogFooter>
+   764→            <Button variant="outline" onClick={() => setDialogOpen(false)}>Annuler</Button>
+   765→            <Button onClick={handleSave} disabled={saving} className="bg-emerald-700 hover:bg-emerald-800 text-white">
+   766→              {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+   767→              Enregistrer
+   768→            </Button>
+   769→          </DialogFooter>
+   770→        </DialogContent>
+   771→      </Dialog>
+   772→    </div>
+   773→  )
+   774→}
+   775→
+   776→/* ═══════════════════════════════════════════════════
+   777→   DEPARTMENTS VIEW
+   778→   ═══════════════════════════════════════════════════ */
+   779→
+   780→function DepartmentsView() {
+   781→  const [departments, setDepartments] = useState<any[]>([])
+   782→  const [loading, setLoading] = useState(true)
+   783→  const [dialogOpen, setDialogOpen] = useState(false)
+   784→  const [saving, setSaving] = useState(false)
+   785→  const [form, setForm] = useState({ name: '', type: 'clinique', description: '', color: '#047857' })
+   786→
+   787→  const load = useCallback(async () => {
+   788→    setLoading(true)
+   789→    try {
+   790→      const res = await fetch('/api/departments')
+   791→      setDepartments(await res.json())
+   792→    } catch {
+   793→      toast.error('Erreur de chargement des départements')
+   794→    } finally {
+   795→      setLoading(false)
+   796→    }
+   797→  }, [])
+   798→
+   799→  useEffect(() => { load() }, [load])
+   800→
+   801→  const handleSave = async () => {
+   802→    if (!form.name) { toast.error('Nom requis'); return }
+   803→    setSaving(true)
+   804→    try {
+   805→      const res = await fetch('/api/departments', {
+   806→        method: 'POST',
+   807→        headers: { 'Content-Type': 'application/json' },
+   808→        body: JSON.stringify(form),
+   809→      })
+   810→      if (!res.ok) { const d = await res.json(); toast.error(d.error); return }
+   811→      toast.success('Département créé')
+   812→      setDialogOpen(false)
+   813→      setForm({ name: '', type: 'clinique', description: '', color: '#047857' })
+   814→      load()
+   815→    } catch { toast.error('Erreur serveur') } finally { setSaving(false) }
+   816→  }
+   817→
+   818→  return (
+   819→    <div className="space-y-6 animate-fade-in-up">
+   820→      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+   821→        <div>
+   822→          <h1 className="text-2xl font-bold">Départements</h1>
+   823→          <p className="text-muted-foreground text-sm mt-1">
+   824→            {departments.length} département{departments.length > 1 ? 's' : ''}
+   825→          </p>
+   826→        </div>
+   827→        <Button onClick={() => setDialogOpen(true)} className="bg-emerald-700 hover:bg-emerald-800 text-white">
+   828→          <Plus className="w-4 h-4 mr-2" />
+   829→          Nouveau Département
+   830→        </Button>
+   831→      </div>
+   832→
+   833→      {loading ? (
+   834→        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+   835→          {Array.from({ length: 6 }).map((_, i) => <CardSkeleton key={i} />)}
+   836→        </div>
+   837→      ) : (
+   838→        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+   839→          {departments.map((dept: any) => (
+   840→            <Card key={dept.id} className="card-hover overflow-hidden">
+   841→              <div className="h-1.5" style={{ backgroundColor: dept.color || '#047857' }} />
+   842→              <CardContent className="p-5">
+   843→                <div className="flex items-start justify-between mb-2">
+   844→                  <h3 className="font-semibold text-sm">{dept.name}</h3>
+   845→                  <Badge variant="outline" className="text-xs capitalize">
+   846→                    {dept.type}
+   847→                  </Badge>
+   848→                </div>
+   849→                {dept.description && (
+   850→                  <p className="text-xs text-muted-foreground line-clamp-2 mb-3">{dept.description}</p>
+   851→                )}
+   852→                <Separator className="my-3" />
+   853→                <div className="flex items-center justify-between text-xs text-muted-foreground">
+   854→                  <span className="flex items-center gap-1">
+   855→                    <Users className="w-3.5 h-3.5" />
+   856→                    {dept._count?.staff || 0} membre{(dept._count?.staff || 0) > 1 ? 's' : ''}
+   857→                  </span>
+   858→                  {dept.head && (
+   859→                    <span>
+   860→                      Chef : Dr. {dept.head.firstName} {dept.head.lastName}
+   861→                    </span>
+   862→                  )}
+   863→                </div>
+   864→              </CardContent>
+   865→            </Card>
+   866→          ))}
+   867→          {departments.length === 0 && (
+   868→            <div className="col-span-full text-center py-16 text-muted-foreground">
+   869→              <Building2 className="w-10 h-10 mx-auto mb-3 opacity-30" />
+   870→              Aucun département enregistré
+   871→            </div>
+   872→          )}
+   873→        </div>
+   874→      )}
+   875→
+   876→      {/* Create Dialog */}
+   877→      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+   878→        <DialogContent className="sm:max-w-md">
+   879→          <DialogHeader><DialogTitle>Nouveau Département</DialogTitle></DialogHeader>
+   880→          <div className="space-y-4">
+   881→            <div className="space-y-1.5">
+   882→              <Label className="text-xs">Nom *</Label>
+   883→              <Input value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} />
+   884→            </div>
+   885→            <div className="space-y-1.5">
+   886→              <Label className="text-xs">Type</Label>
+   887→              <Select value={form.type} onValueChange={(v) => setForm((p) => ({ ...p, type: v }))}>
+   888→                <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+   889→                <SelectContent>
+   890→                  {DEPT_TYPES.map((t) => (
+   891→                    <SelectItem key={t} value={t} className="capitalize">{t.replace('_', ' ')}</SelectItem>
+   892→                  ))}
+   893→                </SelectContent>
+   894→              </Select>
+   895→            </div>
+   896→            <div className="space-y-1.5">
+   897→              <Label className="text-xs">Description</Label>
+   898→              <Input value={form.description} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} />
+   899→            </div>
+   900→            <div className="space-y-1.5">
+   901→              <Label className="text-xs">Couleur</Label>
+   902→              <div className="flex items-center gap-2">
+   903→                <input
+   904→                  type="color"
+   905→                  value={form.color}
+   906→                  onChange={(e) => setForm((p) => ({ ...p, color: e.target.value }))}
+   907→                  className="w-10 h-10 rounded cursor-pointer border-0"
+   908→                />
+   909→                <Input value={form.color} onChange={(e) => setForm((p) => ({ ...p, color: e.target.value }))} className="flex-1" />
+   910→              </div>
+   911→            </div>
+   912→          </div>
+   913→          <DialogFooter>
+   914→            <Button variant="outline" onClick={() => setDialogOpen(false)}>Annuler</Button>
+   915→            <Button onClick={handleSave} disabled={saving} className="bg-emerald-700 hover:bg-emerald-800 text-white">
+   916→              {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+   917→              Créer
+   918→            </Button>
+   919→          </DialogFooter>
+   920→        </DialogContent>
+   921→      </Dialog>
+   922→    </div>
+   923→  )
+   924→}
+   925→
+   926→/* ═══════════════════════════════════════════════════
+   927→   STAFF VIEW
+   928→   ═══════════════════════════════════════════════════ */
+   929→
+   930→function StaffView() {
+   931→  const [staffList, setStaffList] = useState<any[]>([])
+   932→  const [roles, setRoles] = useState<any[]>([])
+   933→  const [departments, setDepartments] = useState<any[]>([])
+   934→  const [loading, setLoading] = useState(true)
+   935→  const [dialogOpen, setDialogOpen] = useState(false)
+   936→  const [saving, setSaving] = useState(false)
+   937→  const [form, setForm] = useState({
+   938→    firstName: '', lastName: '', phone: '', email: '', gender: 'M',
+   939→    departmentId: '', roleId: '', specialty: '', licenseNumber: '',
+   940→  })
+   941→
+   942→  const load = useCallback(async () => {
+   943→    setLoading(true)
+   944→    try {
+   945→      const [sRes, dRes] = await Promise.all([fetch('/api/staff'), fetch('/api/departments')])
+   946→      const sData = await sRes.json()
+   947→      const dData = await dRes.json()
+   948→      setStaffList(sData)
+   949→      setDepartments(dData)
+   950→      // Extract unique roles from staff
+   951→      const roleMap = new Map<string, any>()
+   952→      sData.forEach((s: any) => {
+   953→        if (s.role && !roleMap.has(s.role.id)) roleMap.set(s.role.id, s.role)
+   954→      })
+   955→      setRoles(Array.from(roleMap.values()))
+   956→    } catch {
+   957→      toast.error('Erreur de chargement du personnel')
+   958→    } finally {
+   959→      setLoading(false)
+   960→    }
+   961→  }, [])
+   962→
+   963→  useEffect(() => { load() }, [load])
+   964→
+   965→  const handleSave = async () => {
+   966→    if (!form.firstName || !form.lastName || !form.phone || !form.roleId) {
+   967→      toast.error('Prénom, nom, téléphone et rôle sont requis')
+   968→      return
+   969→    }
+   970→    setSaving(true)
+   971→    try {
+   972→      const body: Record<string, string> = { ...form }
+   973→      if (!body.departmentId) delete body.departmentId
+   974→      const res = await fetch('/api/staff', {
+   975→        method: 'POST',
+   976→        headers: { 'Content-Type': 'application/json' },
+   977→        body: JSON.stringify(body),
+   978→      })
+   979→      if (!res.ok) { const d = await res.json(); toast.error(d.error); return }
+   980→      toast.success('Membre du personnel ajouté')
+   981→      setDialogOpen(false)
+   982→      setForm({ firstName: '', lastName: '', phone: '', email: '', gender: 'M', departmentId: '', roleId: '', specialty: '', licenseNumber: '' })
+   983→      load()
+   984→    } catch { toast.error('Erreur serveur') } finally { setSaving(false) }
+   985→  }
+   986→
+   987→  const updateForm = (f: string, v: string) => setForm((p) => ({ ...p, [f]: v }))
+   988→
+   989→  return (
+   990→    <div className="space-y-6 animate-fade-in-up">
+   991→      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+   992→        <div>
+   993→          <h1 className="text-2xl font-bold">Personnel</h1>
+   994→          <p className="text-muted-foreground text-sm mt-1">{staffList.length} membre{staffList.length > 1 ? 's' : ''}</p>
+   995→        </div>
+   996→        <Button onClick={() => setDialogOpen(true)} className="bg-emerald-700 hover:bg-emerald-800 text-white">
+   997→          <Plus className="w-4 h-4 mr-2" />
+   998→          Nouveau Membre
+   999→        </Button>
+  1000→      </div>
+  1001→
+  1002→      <Card>
+  1003→        <CardContent className="p-0">
+  1004→          {loading ? (
+  1005→            <TableSkeleton rows={6} cols={7} />
+  1006→          ) : (
+  1007→            <Table>
+  1008→              <TableHeader>
+  1009→                <TableRow>
+  1010→                  <TableHead className="text-xs">Nom</TableHead>
+  1011→                  <TableHead className="text-xs">Prénom</TableHead>
+  1012→                  <TableHead className="text-xs">Téléphone</TableHead>
+  1013→                  <TableHead className="text-xs">Rôle</TableHead>
+  1014→                  <TableHead className="text-xs">Département</TableHead>
+  1015→                  <TableHead className="text-xs">Spécialité</TableHead>
+  1016→                  <TableHead className="text-xs">Statut</TableHead>
+  1017→                </TableRow>
+  1018→              </TableHeader>
+  1019→              <TableBody>
+  1020→                {staffList.map((s: any) => (
+  1021→                  <TableRow key={s.id}>
+  1022→                    <TableCell className="text-xs font-medium">{s.lastName}</TableCell>
+  1023→                    <TableCell className="text-xs">{s.firstName}</TableCell>
+  1024→                    <TableCell className="text-xs">{s.phone}</TableCell>
+  1025→                    <TableCell className="text-xs">
+  1026→                      <Badge variant="secondary" className="text-xs">{s.role?.label || s.role?.name}</Badge>
+  1027→                    </TableCell>
+  1028→                    <TableCell className="text-xs">{s.department?.name || '—'}</TableCell>
+  1029→                    <TableCell className="text-xs">{s.specialty || '—'}</TableCell>
+  1030→                    <TableCell className="text-xs">
+  1031→                      <Badge className={s.isActive ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : 'bg-red-100 text-red-800 border-red-300'} variant="outline">
+  1032→                        {s.isActive ? 'Actif' : 'Inactif'}
+  1033→                      </Badge>
+  1034→                    </TableCell>
+  1035→                  </TableRow>
+  1036→                ))}
+  1037→                {staffList.length === 0 && (
+  1038→                  <TableRow>
+  1039→                    <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
+  1040→                      <Users className="w-8 h-8 mx-auto mb-2 opacity-30" />
+  1041→                      Aucun personnel enregistré
+  1042→                    </TableCell>
+  1043→                  </TableRow>
+  1044→                )}
+  1045→              </TableBody>
+  1046→            </Table>
+  1047→          )}
+  1048→        </CardContent>
+  1049→      </Card>
+  1050→
+  1051→      {/* Create Dialog */}
+  1052→      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+  1053→        <DialogContent className="sm:max-w-lg">
+  1054→          <DialogHeader><DialogTitle>Nouveau Membre du Personnel</DialogTitle></DialogHeader>
+  1055→          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+  1056→            <div className="space-y-1.5">
+  1057→              <Label className="text-xs">Prénom *</Label>
+  1058→              <Input value={form.firstName} onChange={(e) => updateForm('firstName', e.target.value)} />
+  1059→            </div>
+  1060→            <div className="space-y-1.5">
+  1061→              <Label className="text-xs">Nom *</Label>
+  1062→              <Input value={form.lastName} onChange={(e) => updateForm('lastName', e.target.value)} />
+  1063→            </div>
+  1064→            <div className="space-y-1.5">
+  1065→              <Label className="text-xs">Téléphone *</Label>
+  1066→              <Input value={form.phone} onChange={(e) => updateForm('phone', e.target.value)} />
+  1067→            </div>
+  1068→            <div className="space-y-1.5">
+  1069→              <Label className="text-xs">Email</Label>
+  1070→              <Input type="email" value={form.email} onChange={(e) => updateForm('email', e.target.value)} />
+  1071→            </div>
+  1072→            <div className="space-y-1.5">
+  1073→              <Label className="text-xs">Sexe</Label>
+  1074→              <Select value={form.gender} onValueChange={(v) => updateForm('gender', v)}>
+  1075→                <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+  1076→                <SelectContent>
+  1077→                  <SelectItem value="M">Masculin</SelectItem>
+  1078→                  <SelectItem value="F">Féminin</SelectItem>
+  1079→                </SelectContent>
+  1080→              </Select>
+  1081→            </div>
+  1082→            <div className="space-y-1.5">
+  1083→              <Label className="text-xs">Département</Label>
+  1084→              <Select value={form.departmentId} onValueChange={(v) => updateForm('departmentId', v)}>
+  1085→                <SelectTrigger className="w-full"><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+  1086→                <SelectContent>
+  1087→                  {departments.map((d: any) => (
+  1088→                    <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+  1089→                  ))}
+  1090→                </SelectContent>
+  1091→              </Select>
+  1092→            </div>
+  1093→            <div className="space-y-1.5">
+  1094→              <Label className="text-xs">Rôle *</Label>
+  1095→              <Select value={form.roleId} onValueChange={(v) => updateForm('roleId', v)}>
+  1096→                <SelectTrigger className="w-full"><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+  1097→                <SelectContent>
+  1098→                  {roles.map((r: any) => (
+  1099→                    <SelectItem key={r.id} value={r.id}>{r.label || r.name}</SelectItem>
+  1100→                  ))}
+  1101→                </SelectContent>
+  1102→              </Select>
+  1103→            </div>
+  1104→            <div className="space-y-1.5">
+  1105→              <Label className="text-xs">Spécialité</Label>
+  1106→              <Input value={form.specialty} onChange={(e) => updateForm('specialty', e.target.value)} />
+  1107→            </div>
+  1108→            <div className="space-y-1.5 sm:col-span-2">
+  1109→              <Label className="text-xs">N° Licence</Label>
+  1110→              <Input value={form.licenseNumber} onChange={(e) => updateForm('licenseNumber', e.target.value)} />
+  1111→            </div>
+  1112→          </div>
+  1113→          <DialogFooter>
+  1114→            <Button variant="outline" onClick={() => setDialogOpen(false)}>Annuler</Button>
+  1115→            <Button onClick={handleSave} disabled={saving} className="bg-emerald-700 hover:bg-emerald-800 text-white">
+  1116→              {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+  1117→              Enregistrer
+  1118→            </Button>
+  1119→          </DialogFooter>
+  1120→        </DialogContent>
+  1121→      </Dialog>
+  1122→    </div>
+  1123→  )
+  1124→}
+  1125→
+  1126→/* ═══════════════════════════════════════════════════
+  1127→   APPOINTMENTS VIEW
+  1128→   ═══════════════════════════════════════════════════ */
+  1129→
+  1130→function AppointmentsView() {
+  1131→  const [appointments, setAppointments] = useState<any[]>([])
+  1132→  const [patients, setPatients] = useState<any[]>([])
+  1133→  const [staffList, setStaffList] = useState<any[]>([])
+  1134→  const [loading, setLoading] = useState(true)
+  1135→  const [dialogOpen, setDialogOpen] = useState(false)
+  1136→  const [saving, setSaving] = useState(false)
+  1137→  const [form, setForm] = useState({
+  1138→    patientId: '', staffId: '', date: '', type: 'consultation', reason: '',
+  1139→  })
+  1140→
+  1141→  const load = useCallback(async () => {
+  1142→    setLoading(true)
+  1143→    try {
+  1144→      const [aRes, pRes, sRes] = await Promise.all([
+  1145→        fetch('/api/appointments'),
+  1146→        fetch('/api/patients?limit=100'),
+  1147→        fetch('/api/staff'),
+  1148→      ])
+  1149→      setAppointments(await aRes.json())
+  1150→      const pData = await pRes.json()
+  1151→      setPatients(pData.data || [])
+  1152→      setStaffList(await sRes.json())
+  1153→    } catch {
+  1154→      toast.error('Erreur de chargement')
+  1155→    } finally {
+  1156→      setLoading(false)
+  1157→    }
+  1158→  }, [])
+  1159→
+  1160→  useEffect(() => { load() }, [load])
+  1161→
+  1162→  const handleSave = async () => {
+  1163→    if (!form.patientId || !form.staffId || !form.date) {
+  1164→      toast.error('Patient, médecin et date sont requis')
+  1165→      return
+  1166→    }
+  1167→    setSaving(true)
+  1168→    try {
+  1169→      const res = await fetch('/api/appointments', {
+  1170→        method: 'POST',
+  1171→        headers: { 'Content-Type': 'application/json' },
+  1172→        body: JSON.stringify(form),
+  1173→      })
+  1174→      if (!res.ok) { const d = await res.json(); toast.error(d.error); return }
+  1175→      toast.success('Rendez-vous créé')
+  1176→      setDialogOpen(false)
+  1177→      setForm({ patientId: '', staffId: '', date: '', type: 'consultation', reason: '' })
+  1178→      load()
+  1179→    } catch { toast.error('Erreur serveur') } finally { setSaving(false) }
+  1180→  }
+  1181→
+  1182→  const updateForm = (f: string, v: string) => setForm((p) => ({ ...p, [f]: v }))
+  1183→
+  1184→  const handleCancel = async (id: string) => {
+  1185→    try {
+  1186→      const res = await fetch('/api/appointments', {
+  1187→        method: 'DELETE',
+  1188→        headers: { 'Content-Type': 'application/json' },
+  1189→        body: JSON.stringify({ id }),
+  1190→      })
+  1191→      if (res.ok) {
+  1192→        toast.success('Rendez-vous annulé')
+  1193→        load()
+  1194→      }
+  1195→    } catch { toast.error('Erreur') }
+  1196→  }
+  1197→
+  1198→  return (
+  1199→    <div className="space-y-6 animate-fade-in-up">
+  1200→      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+  1201→        <div>
+  1202→          <h1 className="text-2xl font-bold">Rendez-vous</h1>
+  1203→          <p className="text-muted-foreground text-sm mt-1">{appointments.length} rendez-vous</p>
+  1204→        </div>
+  1205→        <Button onClick={() => setDialogOpen(true)} className="bg-emerald-700 hover:bg-emerald-800 text-white">
+  1206→          <Plus className="w-4 h-4 mr-2" />
+  1207→          Nouveau Rendez-vous
+  1208→        </Button>
+  1209→      </div>
+  1210→
+  1211→      <Card>
+  1212→        <CardContent className="p-0">
+  1213→          {loading ? (
+  1214→            <TableSkeleton rows={6} cols={6} />
+  1215→          ) : (
+  1216→            <Table>
+  1217→              <TableHeader>
+  1218→                <TableRow>
+  1219→                  <TableHead className="text-xs">Date</TableHead>
+  1220→                  <TableHead className="text-xs">Patient</TableHead>
+  1221→                  <TableHead className="text-xs">Médecin</TableHead>
+  1222→                  <TableHead className="text-xs">Département</TableHead>
+  1223→                  <TableHead className="text-xs">Statut</TableHead>
+  1224→                  <TableHead className="text-xs">Motif</TableHead>
+  1225→                  <TableHead className="text-xs"></TableHead>
+  1226→                </TableRow>
+  1227→              </TableHeader>
+  1228→              <TableBody>
+  1229→                {appointments.map((a: any) => {
+  1230→                  const st = STATUS_APPOINTMENT[a.status] || STATUS_APPOINTMENT.en_attente
+  1231→                  return (
+  1232→                    <TableRow key={a.id}>
+  1233→                      <TableCell className="text-xs">{fmtDateTime(a.date)}</TableCell>
+  1234→                      <TableCell className="text-xs font-medium">
+  1235→                        {a.patient?.firstName} {a.patient?.lastName}
+  1236→                      </TableCell>
+  1237→                      <TableCell className="text-xs">
+  1238→                        Dr. {a.staff?.firstName} {a.staff?.lastName}
+  1239→                      </TableCell>
+  1240→                      <TableCell className="text-xs">—</TableCell>
+  1241→                      <TableCell className="text-xs">
+  1242→                        <Badge variant="outline" className={st.className}>{st.label}</Badge>
+  1243→                      </TableCell>
+  1244→                      <TableCell className="text-xs max-w-[200px] truncate">{a.reason || '—'}</TableCell>
+  1245→                      <TableCell className="text-xs">
+  1246→                        {a.status === 'en_attente' && (
+  1247→                          <Button variant="ghost" size="sm" onClick={() => handleCancel(a.id)} className="h-7 text-red-600 hover:text-red-700 hover:bg-red-50">
+  1248→                            <XCircle className="w-3.5 h-3.5 mr-1" />
+  1249→                            Annuler
+  1250→                          </Button>
+  1251→                        )}
+  1252→                      </TableCell>
+  1253→                    </TableRow>
+  1254→                  )
+  1255→                })}
+  1256→                {appointments.length === 0 && (
+  1257→                  <TableRow>
+  1258→                    <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
+  1259→                      <Calendar className="w-8 h-8 mx-auto mb-2 opacity-30" />
+  1260→                      Aucun rendez-vous
+  1261→                    </TableCell>
+  1262→                  </TableRow>
+  1263→                )}
+  1264→              </TableBody>
+  1265→            </Table>
+  1266→          )}
+  1267→        </CardContent>
+  1268→      </Card>
+  1269→
+  1270→      {/* Create Dialog */}
+  1271→      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+  1272→        <DialogContent className="sm:max-w-lg">
+  1273→          <DialogHeader><DialogTitle>Nouveau Rendez-vous</DialogTitle></DialogHeader>
+  1274→          <div className="space-y-4">
+  1275→            <div className="space-y-1.5">
+  1276→              <Label className="text-xs">Patient *</Label>
+  1277→              <Select value={form.patientId} onValueChange={(v) => updateForm('patientId', v)}>
+  1278→                <SelectTrigger className="w-full"><SelectValue placeholder="Sélectionner un patient" /></SelectTrigger>
+  1279→                <SelectContent className="max-h-60">
+  1280→                  {patients.map((p: any) => (
+  1281→                    <SelectItem key={p.id} value={p.id}>
+  1282→                      {p.firstName} {p.lastName} ({p.folderNumber})
+  1283→                    </SelectItem>
+  1284→                  ))}
+  1285→                </SelectContent>
+  1286→              </Select>
+  1287→            </div>
+  1288→            <div className="space-y-1.5">
+  1289→              <Label className="text-xs">Médecin *</Label>
+  1290→              <Select value={form.staffId} onValueChange={(v) => updateForm('staffId', v)}>
+  1291→                <SelectTrigger className="w-full"><SelectValue placeholder="Sélectionner un médecin" /></SelectTrigger>
+  1292→                <SelectContent className="max-h-60">
+  1293→                  {staffList.map((s: any) => (
+  1294→                    <SelectItem key={s.id} value={s.id}>
+  1295→                      Dr. {s.firstName} {s.lastName} {s.specialty ? `— ${s.specialty}` : ''}
+  1296→                    </SelectItem>
+  1297→                  ))}
+  1298→                </SelectContent>
+  1299→              </Select>
+  1300→            </div>
+  1301→            <div className="space-y-1.5">
+  1302→              <Label className="text-xs">Date et heure *</Label>
+  1303→              <Input type="datetime-local" value={form.date} onChange={(e) => updateForm('date', e.target.value)} />
+  1304→            </div>
+  1305→            <div className="space-y-1.5">
+  1306→              <Label className="text-xs">Type</Label>
+  1307→              <Select value={form.type} onValueChange={(v) => updateForm('type', v)}>
+  1308→                <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+  1309→                <SelectContent>
+  1310→                  <SelectItem value="consultation">Consultation</SelectItem>
+  1311→                  <SelectItem value="suivi">Suivi</SelectItem>
+  1312→                  <SelectItem value="urgence">Urgence</SelectItem>
+  1313→                  <SelectItem value="controle">Contrôle</SelectItem>
+  1314→                </SelectContent>
+  1315→              </Select>
+  1316→            </div>
+  1317→            <div className="space-y-1.5">
+  1318→              <Label className="text-xs">Motif</Label>
+  1319→              <Input value={form.reason} onChange={(e) => updateForm('reason', e.target.value)} placeholder="Motif de la visite" />
+  1320→            </div>
+  1321→          </div>
+  1322→          <DialogFooter>
+  1323→            <Button variant="outline" onClick={() => setDialogOpen(false)}>Annuler</Button>
+  1324→            <Button onClick={handleSave} disabled={saving} className="bg-emerald-700 hover:bg-emerald-800 text-white">
+  1325→              {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+  1326→              Créer
+  1327→            </Button>
+  1328→          </DialogFooter>
+  1329→        </DialogContent>
+  1330→      </Dialog>
+  1331→    </div>
+  1332→  )
+  1333→}
+  1334→
+  1335→/* ═══════════════════════════════════════════════════
+  1336→   CONSULTATIONS VIEW
+  1337→   ═══════════════════════════════════════════════════ */
+  1338→
+  1339→function ConsultationsView() {
+  1340→  const [patients, setPatients] = useState<any[]>([])
+  1341→  const [staffList, setStaffList] = useState<any[]>([])
+  1342→  const [consultations, setConsultations] = useState<any[]>([])
+  1343→  const [selectedPatient, setSelectedPatient] = useState('')
+  1344→  const [loading, setLoading] = useState(false)
+  1345→  const [loaded, setLoaded] = useState(false)
+  1346→  const [dialogOpen, setDialogOpen] = useState(false)
+  1347→  const [saving, setSaving] = useState(false)
+  1348→  const [form, setForm] = useState({
+  1349→    patientId: '', staffId: '', chiefComplaint: '', diagnosis: '', plan: '',
+  1350→  })
+  1351→
+  1352→  // Load patients and staff on mount
+  1353→  useEffect(() => {
+  1354→    const loadBase = async () => {
+  1355→      try {
+  1356→        const [pRes, sRes] = await Promise.all([fetch('/api/patients?limit=100'), fetch('/api/staff')])
+  1357→        const pData = await pRes.json()
+  1358→        setPatients(pData.data || [])
+  1359→        setStaffList(await sRes.json())
+  1360→      } catch { toast.error('Erreur de chargement') }
+  1361→    }
+  1362→    loadBase()
+  1363→  }, [])
+  1364→
+  1365→  // Load consultations when patient selected
+  1366→  useEffect(() => {
+  1367→    if (!selectedPatient) {
+  1368→      setConsultations([])
+  1369→      setLoaded(false)
+  1370→      return
+  1371→    }
+  1372→    const loadConsultations = async () => {
+  1373→      setLoading(true)
+  1374→      try {
+  1375→        const res = await fetch(`/api/consultations?patientId=${selectedPatient}`)
+  1376→        if (res.ok) setConsultations(await res.json())
+  1377→        else setConsultations([])
+  1378→      } catch { setConsultations([]) } finally { setLoading(false); setLoaded(true) }
+  1379→    }
+  1380→    loadConsultations()
+  1381→  }, [selectedPatient])
+  1382→
+  1383→  const handleSave = async () => {
+  1384→    if (!form.patientId || !form.chiefComplaint) {
+  1385→      toast.error('Patient et motif de consultation sont requis')
+  1386→      return
+  1387→    }
+  1388→    setSaving(true)
+  1389→    try {
+  1390→      const res = await fetch('/api/consultations', {
+  1391→        method: 'POST',
+  1392→        headers: { 'Content-Type': 'application/json' },
+  1393→        body: JSON.stringify(form),
+  1394→      })
+  1395→      if (!res.ok) { const d = await res.json(); toast.error(d.error); return }
+  1396→      toast.success('Consultation enregistrée')
+  1397→      setDialogOpen(false)
+  1398→      setForm({ patientId: '', staffId: '', chiefComplaint: '', diagnosis: '', plan: '' })
+  1399→      if (form.patientId) {
+  1400→        setSelectedPatient(form.patientId)
+  1401→      }
+  1402→    } catch { toast.error('Erreur serveur') } finally { setSaving(false) }
+  1403→  }
+  1404→
+  1405→  const updateForm = (f: string, v: string) => setForm((p) => ({ ...p, [f]: v }))
+  1406→
+  1407→  return (
+  1408→    <div className="space-y-6 animate-fade-in-up">
+  1409→      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+  1410→        <div>
+  1411→          <h1 className="text-2xl font-bold">Consultations</h1>
+  1412→          <p className="text-muted-foreground text-sm mt-1">Historique des consultations</p>
+  1413→        </div>
+  1414→        <Button onClick={() => setDialogOpen(true)} className="bg-emerald-700 hover:bg-emerald-800 text-white">
+  1415→          <Plus className="w-4 h-4 mr-2" />
+  1416→          Nouvelle Consultation
+  1417→        </Button>
+  1418→      </div>
+  1419→
+  1420→      {/* Patient selector */}
+  1421→      <div className="max-w-md">
+  1422→        <Label className="text-xs mb-1.5 block">Sélectionner un patient</Label>
+  1423→        <Select value={selectedPatient} onValueChange={setSelectedPatient}>
+  1424→          <SelectTrigger className="w-full">
+  1425→            <SelectValue placeholder="Choisir un patient pour voir ses consultations" />
+  1426→          </SelectTrigger>
+  1427→          <SelectContent className="max-h-60">
+  1428→            {patients.map((p: any) => (
+  1429→              <SelectItem key={p.id} value={p.id}>
+  1430→                {p.firstName} {p.lastName} ({p.folderNumber})
+  1431→              </SelectItem>
+  1432→            ))}
+  1433→          </SelectContent>
+  1434→        </Select>
+  1435→      </div>
+  1436→
+  1437→      {/* Consultations table */}
+  1438→      <Card>
+  1439→        <CardContent className="p-0">
+  1440→          {!selectedPatient ? (
+  1441→            <div className="text-center py-16 text-muted-foreground">
+  1442→              <Stethoscope className="w-10 h-10 mx-auto mb-3 opacity-30" />
+  1443→              <p className="text-sm">Sélectionnez un patient pour voir ses consultations</p>
+  1444→            </div>
+  1445→          ) : loading ? (
+  1446→            <TableSkeleton rows={4} cols={5} />
+  1447→          ) : (
+  1448→            <Table>
+  1449→              <TableHeader>
+  1450→                <TableRow>
+  1451→                  <TableHead className="text-xs">Date</TableHead>
+  1452→                  <TableHead className="text-xs">Médecin</TableHead>
+  1453→                  <TableHead className="text-xs">Motif Principal</TableHead>
+  1454→                  <TableHead className="text-xs">Diagnostic</TableHead>
+  1455→                  <TableHead className="text-xs">Statut</TableHead>
+  1456→                </TableRow>
+  1457→              </TableHeader>
+  1458→              <TableBody>
+  1459→                {consultations.map((c: any) => (
+  1460→                  <TableRow key={c.id}>
+  1461→                    <TableCell className="text-xs">{fmtDateTime(c.createdAt)}</TableCell>
+  1462→                    <TableCell className="text-xs">
+  1463→                      Dr. {c.staff?.firstName} {c.staff?.lastName}
+  1464→                    </TableCell>
+  1465→                    <TableCell className="text-xs max-w-[200px] truncate">{c.chiefComplaint || '—'}</TableCell>
+  1466→                    <TableCell className="text-xs max-w-[200px] truncate">{c.diagnosis || '—'}</TableCell>
+  1467→                    <TableCell className="text-xs">
+  1468→                      <Badge variant="outline" className={
+  1469→                        c.status === 'termine' ? 'bg-emerald-100 text-emerald-800 border-emerald-300' :
+  1470→                        c.status === 'en_cours' ? 'bg-orange-100 text-orange-800 border-orange-300' :
+  1471→                        'bg-blue-100 text-blue-800 border-blue-300'
+  1472→                      }>
+  1473→                        {c.status === 'termine' ? 'Terminée' : c.status === 'en_cours' ? 'En cours' : 'Planifiée'}
+  1474→                      </Badge>
+  1475→                    </TableCell>
+  1476→                  </TableRow>
+  1477→                ))}
+  1478→                {loaded && consultations.length === 0 && (
+  1479→                  <TableRow>
+  1480→                    <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
+  1481→                      <FileText className="w-8 h-8 mx-auto mb-2 opacity-30" />
+  1482→                      Aucune consultation pour ce patient
+  1483→                    </TableCell>
+  1484→                  </TableRow>
+  1485→                )}
+  1486→              </TableBody>
+  1487→            </Table>
+  1488→          )}
+  1489→        </CardContent>
+  1490→      </Card>
+  1491→
+  1492→      {/* Create Dialog */}
+  1493→      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+  1494→        <DialogContent className="sm:max-w-lg">
+  1495→          <DialogHeader><DialogTitle>Nouvelle Consultation</DialogTitle></DialogHeader>
+  1496→          <div className="space-y-4">
+  1497→            <div className="space-y-1.5">
+  1498→              <Label className="text-xs">Patient *</Label>
+  1499→              <Select value={form.patientId} onValueChange={(v) => updateForm('patientId', v)}>
+  1500→                <SelectTrigger className="w-full"><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+  1501→                <SelectContent className="max-h-60">
+  1502→                  {patients.map((p: any) => (
+  1503→                    <SelectItem key={p.id} value={p.id}>
+  1504→                      {p.firstName} {p.lastName}
+  1505→                    </SelectItem>
+  1506→                  ))}
+  1507→                </SelectContent>
+  1508→              </Select>
+  1509→            </div>
+  1510→            <div className="space-y-1.5">
+  1511→              <Label className="text-xs">Médecin</Label>
+  1512→              <Select value={form.staffId} onValueChange={(v) => updateForm('staffId', v)}>
+  1513→                <SelectTrigger className="w-full"><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+  1514→                <SelectContent className="max-h-60">
+  1515→                  {staffList.map((s: any) => (
+  1516→                    <SelectItem key={s.id} value={s.id}>
+  1517→                      Dr. {s.firstName} {s.lastName}
+  1518→                    </SelectItem>
+  1519→                  ))}
+  1520→                </SelectContent>
+  1521→              </Select>
+  1522→            </div>
+  1523→            <div className="space-y-1.5">
+  1524→              <Label className="text-xs">Motif de consultation *</Label>
+  1525→              <Input value={form.chiefComplaint} onChange={(e) => updateForm('chiefComplaint', e.target.value)} />
+  1526→            </div>
+  1527→            <div className="space-y-1.5">
+  1528→              <Label className="text-xs">Diagnostic</Label>
+  1529→              <Input value={form.diagnosis} onChange={(e) => updateForm('diagnosis', e.target.value)} />
+  1530→            </div>
+  1531→            <div className="space-y-1.5">
+  1532→              <Label className="text-xs">Plan de traitement</Label>
+  1533→              <Input value={form.plan} onChange={(e) => updateForm('plan', e.target.value)} />
+  1534→            </div>
+  1535→          </div>
+  1536→          <DialogFooter>
+  1537→            <Button variant="outline" onClick={() => setDialogOpen(false)}>Annuler</Button>
+  1538→            <Button onClick={handleSave} disabled={saving} className="bg-emerald-700 hover:bg-emerald-800 text-white">
+  1539→              {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+  1540→              Enregistrer
+  1541→            </Button>
+  1542→          </DialogFooter>
+  1543→        </DialogContent>
+  1544→      </Dialog>
+  1545→    </div>
+  1546→  )
+  1547→}
+  1548→
+  1549→/* ═══════════════════════════════════════════════════
+  1550→   INVOICES VIEW
+  1551→   ═══════════════════════════════════════════════════ */
+  1552→
+  1553→function InvoicesView() {
+  1554→  const [invoices, setInvoices] = useState<any[]>([])
+  1555→  const [loading, setLoading] = useState(true)
+  1556→
+  1557→  useEffect(() => {
+  1558→    const load = async () => {
+  1559→      try {
+  1560→        const res = await fetch('/api/invoices')
+  1561→        setInvoices(await res.json())
+  1562→      } catch { toast.error('Erreur de chargement') } finally { setLoading(false) }
+  1563→    }
+  1564→    load()
+  1565→  }, [])
+  1566→
+  1567→  return (
+  1568→    <div className="space-y-6 animate-fade-in-up">
+  1569→      <div>
+  1570→        <h1 className="text-2xl font-bold">Facturation</h1>
+  1571→        <p className="text-muted-foreground text-sm mt-1">{invoices.length} facture{invoices.length > 1 ? 's' : ''}</p>
+  1572→      </div>
+  1573→
+  1574→      <Card>
+  1575→        <CardContent className="p-0">
+  1576→          {loading ? (
+  1577→            <TableSkeleton rows={6} cols={6} />
+  1578→          ) : (
+  1579→            <Table>
+  1580→              <TableHeader>
+  1581→                <TableRow>
+  1582→                  <TableHead className="text-xs">N° Facture</TableHead>
+  1583→                  <TableHead className="text-xs">Patient</TableHead>
+  1584→                  <TableHead className="text-xs">Montant</TableHead>
+  1585→                  <TableHead className="text-xs">Payé</TableHead>
+  1586→                  <TableHead className="text-xs">Statut</TableHead>
+  1587→                  <TableHead className="text-xs">Méthode</TableHead>
+  1588→                  <TableHead className="text-xs">Date</TableHead>
+  1589→                </TableRow>
+  1590→              </TableHeader>
+  1591→              <TableBody>
+  1592→                {invoices.map((inv: any) => {
+  1593→                  const st = STATUS_INVOICE[inv.status] || STATUS_INVOICE.impayee
+  1594→                  return (
+  1595→                    <TableRow key={inv.id}>
+  1596→                      <TableCell className="text-xs font-mono font-medium">{inv.invoiceNumber}</TableCell>
+  1597→                      <TableCell className="text-xs">
+  1598→                        {inv.patient?.firstName} {inv.patient?.lastName}
+  1599→                      </TableCell>
+  1600→                      <TableCell className="text-xs font-medium">{fmtCurrency(inv.totalAmount)}</TableCell>
+  1601→                      <TableCell className="text-xs">{fmtCurrency(inv.paidAmount)}</TableCell>
+  1602→                      <TableCell className="text-xs">
+  1603→                        <Badge variant="outline" className={st.className}>{st.label}</Badge>
+  1604→                      </TableCell>
+  1605→                      <TableCell className="text-xs">{inv.paymentMethod || '—'}</TableCell>
+  1606→                      <TableCell className="text-xs">{fmtDate(inv.createdAt)}</TableCell>
+  1607→                    </TableRow>
+  1608→                  )
+  1609→                })}
+  1610→                {invoices.length === 0 && (
+  1611→                  <TableRow>
+  1612→                    <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
+  1613→                      <Receipt className="w-8 h-8 mx-auto mb-2 opacity-30" />
+  1614→                      Aucune facture
+  1615→                    </TableCell>
+  1616→                  </TableRow>
+  1617→                )}
+  1618→              </TableBody>
+  1619→            </Table>
+  1620→          )}
+  1621→        </CardContent>
+  1622→      </Card>
+  1623→    </div>
+  1624→  )
+  1625→}
+  1626→
+  1627→/* ═══════════════════════════════════════════════════
+  1628→   MEDICATIONS / PHARMACY VIEW
+  1629→   ═══════════════════════════════════════════════════ */
+  1630→
+  1631→function MedicationsView() {
+  1632→  const [medications, setMedications] = useState<any[]>([])
+  1633→  const [loading, setLoading] = useState(true)
+  1634→  const [search, setSearch] = useState('')
+  1635→
+  1636→  const load = useCallback(async () => {
+  1637→    setLoading(true)
+  1638→    try {
+  1639→      const res = await fetch(`/api/medications?q=${encodeURIComponent(search)}`)
+  1640→      setMedications(await res.json())
+  1641→    } catch { toast.error('Erreur de chargement') } finally { setLoading(false) }
+  1642→  }, [search])
+  1643→
+  1644→  useEffect(() => { load() }, [load])
+  1645→
+  1646→  return (
+  1647→    <div className="space-y-6 animate-fade-in-up">
+  1648→      <div>
+  1649→        <h1 className="text-2xl font-bold">Pharmacie</h1>
+  1650→        <p className="text-muted-foreground text-sm mt-1">{medications.length} médicament{medications.length > 1 ? 's' : ''}</p>
+  1651→      </div>
+  1652→
+  1653→      <div className="relative max-w-md">
+  1654→        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+  1655→        <Input
+  1656→          placeholder="Rechercher un médicament..."
+  1657→          value={search}
+  1658→          onChange={(e) => setSearch(e.target.value)}
+  1659→          className="pl-9"
+  1660→        />
+  1661→      </div>
+  1662→
+  1663→      <Card>
+  1664→        <CardContent className="p-0">
+  1665→          {loading ? (
+  1666→            <TableSkeleton rows={6} cols={6} />
+  1667→          ) : (
+  1668→            <Table>
+  1669→              <TableHeader>
+  1670→                <TableRow>
+  1671→                  <TableHead className="text-xs">Médicament</TableHead>
+  1672→                  <TableHead className="text-xs">Stock</TableHead>
+  1673→                  <TableHead className="text-xs">Prix Vente</TableHead>
+  1674→                  <TableHead className="text-xs">Fournisseur</TableHead>
+  1675→                  <TableHead className="text-xs">Péremption</TableHead>
+  1676→                  <TableHead className="text-xs">Statut</TableHead>
+  1677→                </TableRow>
+  1678→              </TableHeader>
+  1679→              <TableBody>
+  1680→                {medications.map((med: any) => (
+  1681→                  <TableRow key={med.id} className={med.isLowStock ? 'bg-red-50/50' : ''}>
+  1682→                    <TableCell className="text-xs">
+  1683→                      <div className="font-medium">{med.name}</div>
+  1684→                      {med.genericName && <div className="text-muted-foreground">{med.genericName}</div>}
+  1685→                    </TableCell>
+  1686→                    <TableCell className="text-xs">
+  1687→                      <span className={med.isLowStock ? 'font-bold text-red-700' : ''}>
+  1688→                        {med.stockQuantity}
+  1689→                      </span>
+  1690→                      <span className="text-muted-foreground ml-1">({med.minStockAlert} min)</span>
+  1691→                    </TableCell>
+  1692→                    <TableCell className="text-xs font-medium">{fmtCurrency(med.salePrice)}</TableCell>
+  1693→                    <TableCell className="text-xs">{med.supplier || '—'}</TableCell>
+  1694→                    <TableCell className="text-xs">{med.expiryDate ? fmtDate(med.expiryDate) : '—'}</TableCell>
+  1695→                    <TableCell className="text-xs">
+  1696→                      {med.isLowStock ? (
+  1697→                        <Badge variant="outline" className="bg-red-100 text-red-800 border-red-300">
+  1698→                          <AlertTriangle className="w-3 h-3 mr-1" />
+  1699→                          Stock bas
+  1700→                        </Badge>
+  1701→                      ) : (
+  1702→                        <Badge variant="outline" className="bg-emerald-100 text-emerald-800 border-emerald-300">
+  1703→                          <CheckCircle2 className="w-3 h-3 mr-1" />
+  1704→                          En stock
+  1705→                        </Badge>
+  1706→                      )}
+  1707→                    </TableCell>
+  1708→                  </TableRow>
+  1709→                ))}
+  1710→                {medications.length === 0 && (
+  1711→                  <TableRow>
+  1712→                    <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
+  1713→                      <Pill className="w-8 h-8 mx-auto mb-2 opacity-30" />
+  1714→                      Aucun médicament trouvé
+  1715→                    </TableCell>
+  1716→                  </TableRow>
+  1717→                )}
+  1718→              </TableBody>
+  1719→            </Table>
+  1720→          )}
+  1721→        </CardContent>
+  1722→      </Card>
+  1723→    </div>
+  1724→  )
+  1725→}
+  1726→
+  1727→/* ═══════════════════════════════════════════════════
+  1728→   SETTINGS VIEW
+  1729→   ═══════════════════════════════════════════════════ */
+  1730→
+  1731→function SettingsView() {
+  1732→  const [settings, setSettings] = useState<Record<string, string>>({})
+  1733→  const [loading, setLoading] = useState(true)
+  1734→  const { user } = useAppStore()
+  1735→
+  1736→  useEffect(() => {
+  1737→    const load = async () => {
+  1738→      try {
+  1739→        const res = await fetch('/api/settings')
+  1740→        setSettings(await res.json())
+  1741→      } catch { toast.error('Erreur de chargement') } finally { setLoading(false) }
+  1742→    }
+  1743→    load()
+  1744→  }, [])
+  1745→
+  1746→  const settingLabels: Record<string, string> = {
+  1747→    hospital_name: 'Nom de l\'hôpital',
+  1748→    hospital_address: 'Adresse',
+  1749→    hospital_phone: 'Téléphone',
+  1750→    hospital_email: 'Email',
+  1751→    hospital_city: 'Ville',
+  1752→    hospital_country: 'Pays',
+  1753→    currency: 'Devise',
+  1754→    language: 'Langue',
+  1755→  }
+  1756→
+  1757→  return (
+  1758→    <div className="space-y-6 animate-fade-in-up">
+  1759→      <div>
+  1760→        <h1 className="text-2xl font-bold">Paramètres</h1>
+  1761→        <p className="text-muted-foreground text-sm mt-1">Configuration de l&apos;établissement</p>
+  1762→      </div>
+  1763→
+  1764→      {/* Hospital Info */}
+  1765→      <Card>
+  1766→        <CardHeader>
+  1767→          <CardTitle className="text-base">Informations de l&apos;établissement</CardTitle>
+  1768→        </CardHeader>
+  1769→        <CardContent>
+  1770→          {loading ? (
+  1771→            <div className="space-y-3">
+  1772→              {Array.from({ length: 4 }).map((_, i) => (
+  1773→                <Skeleton key={i} className="h-10 w-full" />
+  1774→              ))}
+  1775→            </div>
+  1776→          ) : (
+  1777→            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+  1778→              <div className="space-y-1">
+  1779→                <Label className="text-xs text-muted-foreground">Nom</Label>
+  1780→                <p className="text-sm font-medium">{user?.hospital?.name || settings.hospital_name || 'Clinique Centrale NYA'}</p>
+  1781→              </div>
+  1782→              <div className="space-y-1">
+  1783→                <Label className="text-xs text-muted-foreground">Ville</Label>
+  1784→                <p className="text-sm font-medium">{user?.hospital?.city || settings.hospital_city || 'Douala'}</p>
+  1785→              </div>
+  1786→              <div className="space-y-1">
+  1787→                <Label className="text-xs text-muted-foreground">Téléphone</Label>
+  1788→                <p className="text-sm font-medium">{settings.hospital_phone || '—'}</p>
+  1789→              </div>
+  1790→              <div className="space-y-1">
+  1791→                <Label className="text-xs text-muted-foreground">Email</Label>
+  1792→                <p className="text-sm font-medium">{settings.hospital_email || '—'}</p>
+  1793→              </div>
+  1794→              <div className="space-y-1 sm:col-span-2">
+  1795→                <Label className="text-xs text-muted-foreground">Adresse</Label>
+  1796→                <p className="text-sm font-medium">{settings.hospital_address || '—'}</p>
+  1797→              </div>
+  1798→            </div>
+  1799→          )}
+  1800→        </CardContent>
+  1801→      </Card>
+  1802→
+  1803→      {/* All Settings */}
+  1804→      <Card>
+  1805→        <CardHeader>
+  1806→          <CardTitle className="text-base">Configuration système</CardTitle>
+  1807→        </CardHeader>
+  1808→        <CardContent>
+  1809→          {loading ? (
+  1810→            <div className="space-y-3">
+  1811→              {Array.from({ length: 5 }).map((_, i) => (
+  1812→                <Skeleton key={i} className="h-10 w-full" />
+  1813→              ))}
+  1814→            </div>
+  1815→          ) : Object.keys(settings).length > 0 ? (
+  1816→            <div className="space-y-3">
+  1817→              {Object.entries(settings).map(([key, value]) => (
+  1818→                <div key={key} className="flex items-center justify-between py-2 border-b last:border-0">
+  1819→                  <span className="text-sm text-muted-foreground">{settingLabels[key] || key}</span>
+  1820→                  <span className="text-sm font-medium">{value || '—'}</span>
+  1821→                </div>
+  1822→              ))}
+  1823→            </div>
+  1824→          ) : (
+  1825→            <p className="text-sm text-muted-foreground text-center py-8">
+  1826→              Aucun paramètre configuré
+  1827→            </p>
+  1828→          )}
+  1829→        </CardContent>
+  1830→      </Card>
+  1831→
+  1832→      {/* Connected User Info */}
+  1833→      <Card>
+  1834→        <CardHeader>
+  1835→          <CardTitle className="text-base">Profil connecté</CardTitle>
+  1836→        </CardHeader>
+  1837→        <CardContent>
+  1838→          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+  1839→            <div className="space-y-1">
+  1840→              <Label className="text-xs text-muted-foreground">Nom complet</Label>
+  1841→              <p className="text-sm font-medium">{user?.firstName} {user?.lastName}</p>
+  1842→            </div>
+  1843→            <div className="space-y-1">
+  1844→              <Label className="text-xs text-muted-foreground">Téléphone</Label>
+  1845→              <p className="text-sm font-medium">{user?.phone}</p>
+  1846→            </div>
+  1847→            <div className="space-y-1">
+  1848→              <Label className="text-xs text-muted-foreground">Rôle</Label>
+  1849→              <p className="text-sm font-medium">{user?.role?.label || user?.role?.name || '—'}</p>
+  1850→            </div>
+  1851→            <div className="space-y-1">
+  1852→              <Label className="text-xs text-muted-foreground">Spécialité</Label>
+  1853→              <p className="text-sm font-medium">{user?.specialty || '—'}</p>
+  1854→            </div>
+  1855→            <div className="space-y-1">
+  1856→              <Label className="text-xs text-muted-foreground">Département</Label>
+  1857→              <p className="text-sm font-medium">{user?.department?.name || '—'}</p>
+  1858→            </div>
+  1859→          </div>
+  1860→        </CardContent>
+  1861→      </Card>
+  1862→    </div>
+  1863→  )
+  1864→}
+  1865→
+  1866→/* ═══════════════════════════════════════════════════
+  1867→   MAIN PAGE COMPONENT
+  1868→   ═══════════════════════════════════════════════════ */
+  1869→
+  1870→export default function HomePage() {
+  1871→  const { isAuthenticated, currentView } = useAppStore()
+  1872→  const [mobileOpen, setMobileOpen] = useState(false)
+  1873→
+  1874→  // If not authenticated, show login
+  1875→  if (!isAuthenticated) {
+  1876→    return <LoginScreen />
+  1877→  }
+  1878→
+  1879→  const viewTitle = NAV_ITEMS.find((n) => n.key === currentView)?.label || 'Tableau de bord'
+  1880→
+  1881→  const renderView = () => {
+  1882→    switch (currentView) {
+  1883→      case 'dashboard': return <DashboardView />
+  1884→      case 'patients': return <PatientsView />
+  1885→      case 'departments': return <DepartmentsView />
+  1886→      case 'staff': return <StaffView />
+  1887→      case 'appointments': return <AppointmentsView />
+  1888→      case 'consultations': return <ConsultationsView />
+  1889→      case 'invoices': return <InvoicesView />
+  1890→      case 'medications': return <MedicationsView />
+  1891→      case 'settings': return <SettingsView />
+  1892→      default: return <DashboardView />
+  1893→    }
+  1894→  }
+  1895→
+  1896→  return (
+  1897→    <div className="min-h-screen flex bg-background">
+  1898→      {/* Desktop Sidebar */}
+  1899→      <aside className="hidden lg:flex lg:w-[260px] lg:shrink-0 lg:flex-col fixed inset-y-0 left-0 z-30">
+  1900→        <SidebarContent />
+  1901→      </aside>
+  1902→
+  1903→      {/* Mobile Sidebar (Sheet) */}
+  1904→      <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+  1905→        <SheetContent side="left" className="w-[280px] p-0">
+  1906→          <SheetTitle className="sr-only">Navigation</SheetTitle>
+  1907→          <SidebarContent onClose={() => setMobileOpen(false)} />
+  1908→        </SheetContent>
+  1909→      </Sheet>
+  1910→
+  1911→      {/* Main Content */}
+  1912→      <main className="flex-1 lg:ml-[260px] min-h-screen flex flex-col">
+  1913→        {/* Top Bar */}
+  1914→        <header className="sticky top-0 z-20 bg-background/80 backdrop-blur-sm border-b px-4 sm:px-6 py-3">
+  1915→          <div className="flex items-center gap-3">
+  1916→            <Button
+  1917→              variant="ghost"
+  1918→              size="icon"
+  1919→              className="lg:hidden"
+  1920→              onClick={() => setMobileOpen(true)}
+  1921→            >
+  1922→              <Menu className="w-5 h-5" />
+  1923→            </Button>
+  1924→            <h2 className="text-lg font-semibold">{viewTitle}</h2>
+  1925→          </div>
+  1926→        </header>
+  1927→
+  1928→        {/* Content Area */}
+  1929→        <div className="flex-1 p-4 sm:p-6">
+  1930→          {renderView()}
+  1931→        </div>
+  1932→      </main>
+  1933→
+  1934→      {/* Sonner Toaster */}
+  1935→      <Toaster position="top-right" richColors closeButton />
+  1936→    </div>
+  1937→  )
+  1938→}

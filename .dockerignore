@@ -1,0 +1,18 @@
+# ═══════════════════════════════════════════════════════
+# NYA Santé - .dockerignore
+# ═══════════════════════════════════════════════════════
+
+node_modules
+.next
+.git
+.gitignore
+*.md
+.env*
+!.env.example
+db/*.db
+db/*.db-journal
+dev.log
+server.log
+tool-results
+.fly
+.vercel
