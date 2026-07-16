@@ -83,6 +83,9 @@ import {
   Zap,
   HardDrive,
   Package,
+  FileHeart,
+  Microscope,
+  Thermometer,
 } from 'lucide-react'
 
 /* ═══════════════════════════════════════════════════
@@ -122,6 +125,14 @@ const STATUS_APPOINTMENT: Record<string, { label: string; className: string }> =
   annule: { label: 'Annulé', className: 'bg-red-100 text-red-800 border-red-300' },
 }
 
+const STATUS_LAB: Record<string, { label: string; className: string }> = {
+  en_attente: { label: 'En attente', className: 'bg-yellow-100 text-yellow-800 border-yellow-300' },
+  en_cours: { label: 'En cours', className: 'bg-blue-100 text-blue-800 border-blue-300' },
+  termine: { label: 'Terminé', className: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
+}
+
+const LAB_TYPES = ['Hémogramme', 'Biochimie', 'Urine', 'Parasitologie', 'Sérologie', 'Bactériologie', 'Autre']
+
 const STATUS_INVOICE: Record<string, { label: string; className: string }> = {
   impayee: { label: 'Impayée', className: 'bg-red-100 text-red-800 border-red-300' },
   partiellement_payee: { label: 'Partielle', className: 'bg-yellow-100 text-yellow-800 border-yellow-300' },
@@ -134,12 +145,14 @@ const DEPT_TYPES = ['clinique', 'chirurgical', 'laboratoire', 'imagerie', 'pharm
 const NAV_ITEMS = [
   { key: 'dashboard', label: 'Tableau de bord', icon: LayoutDashboard },
   { key: 'patients', label: 'Patients', icon: Heart },
+  { key: 'dme', label: 'DME', icon: FileHeart },
   { key: 'departments', label: 'Départements', icon: Building2 },
   { key: 'staff', label: 'Personnel', icon: Users },
   { key: 'appointments', label: 'Rendez-vous', icon: Calendar },
   { key: 'consultations', label: 'Consultations', icon: Stethoscope },
   { key: 'invoices', label: 'Facturation', icon: Receipt },
   { key: 'medications', label: 'Pharmacie', icon: Pill },
+  { key: 'labs', label: 'Laboratoire', icon: Microscope },
   { key: 'settings', label: 'Paramètres', icon: Settings },
   { key: 'platforms', label: 'Plateformes', icon: Cloud },
 ]
@@ -266,7 +279,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
   }
 
   return (
-    <div className="flex flex-col h-full bg-emerald-900 text-white">
+    <div className="flex flex-col h-full bg-emerald-900 text-white overflow-hidden">
       {/* Logo */}
       <div className="p-5 flex items-center gap-3 border-b border-emerald-800">
         <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center overflow-hidden">
@@ -279,8 +292,8 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
       </div>
 
       {/* Navigation */}
-      <ScrollArea className="flex-1 py-3 px-3">
-        <nav className="space-y-1">
+      <ScrollArea className="flex-1 py-2 px-3">
+        <nav className="space-y-0.5">
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon
             const isActive = currentView === item.key
@@ -288,7 +301,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
               <button
                 key={item.key}
                 onClick={() => handleNav(item.key)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${
+                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 ${
                   isActive
                     ? 'bg-emerald-700/60 text-white shadow-sm'
                     : 'text-emerald-200 hover:bg-emerald-800/60 hover:text-white'
@@ -1360,8 +1373,14 @@ function ConsultationsView() {
   const [loaded, setLoaded] = useState(false)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [savingVitals, setSavingVitals] = useState(false)
+  const [lastVitals, setLastVitals] = useState<any>(null)
   const [form, setForm] = useState({
     patientId: '', staffId: '', chiefComplaint: '', diagnosis: '', plan: '',
+  })
+  const [vitalsForm, setVitalsForm] = useState({
+    weight: '', height: '', temperature: '', systolic: '', diastolic: '',
+    heartRate: '', oxygenSaturation: '', respiratoryRate: '',
   })
 
   // Load patients and staff on mount
@@ -1377,22 +1396,32 @@ function ConsultationsView() {
     loadBase()
   }, [])
 
-  // Load consultations when patient selected
+  // Load consultations and last vitals when patient selected
   useEffect(() => {
+    setLastVitals(null)
     if (!selectedPatient) {
       setConsultations([])
       setLoaded(false)
       return
     }
-    const loadConsultations = async () => {
+    const loadData = async () => {
       setLoading(true)
       try {
-        const res = await fetch(`/api/consultations?patientId=${selectedPatient}`)
-        if (res.ok) setConsultations(await res.json())
+        const [cRes, vRes] = await Promise.all([
+          fetch(`/api/consultations?patientId=${selectedPatient}`),
+          fetch(`/api/vitals?patientId=${selectedPatient}`),
+        ])
+        if (cRes.ok) setConsultations(await cRes.json())
         else setConsultations([])
+        if (vRes.ok) {
+          const vitalsData = await vRes.json()
+          if (Array.isArray(vitalsData) && vitalsData.length > 0) {
+            setLastVitals(vitalsData[0])
+          }
+        }
       } catch { setConsultations([]) } finally { setLoading(false); setLoaded(true) }
     }
-    loadConsultations()
+    loadData()
   }, [selectedPatient])
 
   const handleSave = async () => {
@@ -1417,7 +1446,44 @@ function ConsultationsView() {
     } catch { toast.error('Erreur serveur') } finally { setSaving(false) }
   }
 
+  const handleSaveVitals = async () => {
+    if (!selectedPatient) return
+    const hasValue = Object.values(vitalsForm).some((v) => v !== '')
+    if (!hasValue) { toast.error('Renseignez au moins une constante vitale'); return }
+    setSavingVitals(true)
+    try {
+      const res = await fetch('/api/vitals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          patientId: selectedPatient,
+          weight: vitalsForm.weight || undefined,
+          height: vitalsForm.height || undefined,
+          temperature: vitalsForm.temperature || undefined,
+          bloodPressureSystolic: vitalsForm.systolic || undefined,
+          bloodPressureDiastolic: vitalsForm.diastolic || undefined,
+          heartRate: vitalsForm.heartRate || undefined,
+          oxygenSaturation: vitalsForm.oxygenSaturation || undefined,
+          respiratoryRate: vitalsForm.respiratoryRate || undefined,
+        }),
+      })
+      if (res.ok) {
+        toast.success('Constantes vitales enregistrées')
+        setVitalsForm({ weight: '', height: '', temperature: '', systolic: '', diastolic: '', heartRate: '', oxygenSaturation: '', respiratoryRate: '' })
+        // Reload vitals
+        const vRes = await fetch(`/api/vitals?patientId=${selectedPatient}`)
+        if (vRes.ok) {
+          const vitalsData = await vRes.json()
+          if (Array.isArray(vitalsData) && vitalsData.length > 0) {
+            setLastVitals(vitalsData[0])
+          }
+        }
+      }
+    } catch { toast.error('Erreur serveur') } finally { setSavingVitals(false) }
+  }
+
   const updateForm = (f: string, v: string) => setForm((p) => ({ ...p, [f]: v }))
+  const updateVitals = (f: string, v: string) => setVitalsForm((p) => ({ ...p, [f]: v }))
 
   return (
     <div className="space-y-6 animate-fade-in-up">
@@ -1448,6 +1514,84 @@ function ConsultationsView() {
           </SelectContent>
         </Select>
       </div>
+
+      {/* Last Vitals Display */}
+      {selectedPatient && lastVitals && (
+        <Card className="border-emerald-200 bg-emerald-50/50">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Thermometer className="w-4 h-4 text-emerald-600" />
+              Dernières constantes vitales
+              <span className="text-xs font-normal text-muted-foreground ml-2">{fmtDateTime(lastVitals.createdAt)}</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
+              {lastVitals.weight != null && <span>Poids : <strong>{lastVitals.weight} kg</strong></span>}
+              {lastVitals.height != null && <span>Taille : <strong>{lastVitals.height} cm</strong></span>}
+              {lastVitals.temperature != null && <span>T° : <strong>{lastVitals.temperature} °C</strong></span>}
+              {lastVitals.bloodPressureSystolic != null && <span>TA : <strong>{lastVitals.bloodPressureSystolic}/{lastVitals.bloodPressureDiastolic} mmHg</strong></span>}
+              {lastVitals.heartRate != null && <span>FC : <strong>{lastVitals.heartRate} bpm</strong></span>}
+              {lastVitals.oxygenSaturation != null && <span>SpO2 : <strong>{lastVitals.oxygenSaturation}%</strong></span>}
+              {lastVitals.respiratoryRate != null && <span>FR : <strong>{lastVitals.respiratoryRate}/min</strong></span>}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Vital Signs Recording */}
+      {selectedPatient && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Activity className="w-4 h-4 text-emerald-600" />
+              Constantes Vitales
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs">Poids (kg)</Label>
+                <Input type="number" step="0.1" value={vitalsForm.weight} onChange={(e) => updateVitals('weight', e.target.value)} placeholder="70" />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Taille (cm)</Label>
+                <Input type="number" step="0.1" value={vitalsForm.height} onChange={(e) => updateVitals('height', e.target.value)} placeholder="170" />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Température (°C)</Label>
+                <Input type="number" step="0.1" value={vitalsForm.temperature} onChange={(e) => updateVitals('temperature', e.target.value)} placeholder="37.0" />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">TA systolique (mmHg)</Label>
+                <Input type="number" value={vitalsForm.systolic} onChange={(e) => updateVitals('systolic', e.target.value)} placeholder="120" />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">TA diastolique (mmHg)</Label>
+                <Input type="number" value={vitalsForm.diastolic} onChange={(e) => updateVitals('diastolic', e.target.value)} placeholder="80" />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">FC (bpm)</Label>
+                <Input type="number" value={vitalsForm.heartRate} onChange={(e) => updateVitals('heartRate', e.target.value)} placeholder="72" />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Saturation O2 (%)</Label>
+                <Input type="number" value={vitalsForm.oxygenSaturation} onChange={(e) => updateVitals('oxygenSaturation', e.target.value)} placeholder="98" />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">FR (/min)</Label>
+                <Input type="number" value={vitalsForm.respiratoryRate} onChange={(e) => updateVitals('respiratoryRate', e.target.value)} placeholder="16" />
+              </div>
+            </div>
+            <div className="mt-3">
+              <Button onClick={handleSaveVitals} disabled={savingVitals} size="sm" className="bg-emerald-700 hover:bg-emerald-800 text-white">
+                {savingVitals && <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />}
+                Enregistrer les constantes
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Consultations table */}
       <Card>
@@ -1874,6 +2018,552 @@ function SettingsView() {
           </div>
         </CardContent>
       </Card>
+    </div>
+  )
+}
+
+/* ═══════════════════════════════════════════════════
+   DME — DOSSIER MÉDICAL ÉLECTRONIQUE
+   ═══════════════════════════════════════════════════ */
+
+function DmeView() {
+  const [search, setSearch] = useState('')
+  const [searchResults, setSearchResults] = useState<any[]>([])
+  const [selectedPatient, setSelectedPatient] = useState<any>(null)
+  const [loading, setLoading] = useState(false)
+  const [searching, setSearching] = useState(false)
+  const [showDropdown, setShowDropdown] = useState(false)
+
+  const handleSearch = useCallback(async (q: string) => {
+    setSearch(q)
+    if (q.length < 2) { setSearchResults([]); setShowDropdown(false); return }
+    setSearching(true)
+    try {
+      const res = await fetch(`/api/patients?q=${encodeURIComponent(q)}`)
+      const data = await res.json()
+      setSearchResults(data.data || [])
+      setShowDropdown(true)
+    } catch { setSearchResults([]) } finally { setSearching(false) }
+  }, [])
+
+  const selectPatient = async (p: any) => {
+    setSelectedPatient(null)
+    setShowDropdown(false)
+    setSearch(`${p.firstName} ${p.lastName}`)
+    setLoading(true)
+    try {
+      const res = await fetch(`/api/patients/${p.id}`)
+      if (res.ok) {
+        setSelectedPatient(await res.json())
+      } else {
+        toast.error('Patient non trouvé')
+      }
+    } catch { toast.error('Erreur de chargement du dossier') } finally { setLoading(false) }
+  }
+
+  const getAge = (dob: string | null) => {
+    if (!dob) return '—'
+    const d = new Date(dob)
+    const now = new Date()
+    let age = now.getFullYear() - d.getFullYear()
+    if (now.getMonth() < d.getMonth() || (now.getMonth() === d.getMonth() && now.getDate() < d.getDate())) age--
+    return `${age} ans`
+  }
+
+  return (
+    <div className="space-y-6 animate-fade-in-up">
+      <div>
+        <h1 className="text-2xl font-bold">Dossier Médical Électronique</h1>
+        <p className="text-muted-foreground text-sm mt-1">Rechercher un patient pour accéder à son dossier complet</p>
+      </div>
+
+      {/* Patient Search */}
+      <div className="relative max-w-lg">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Rechercher par nom ou numéro de dossier..."
+            value={search}
+            onChange={(e) => handleSearch(e.target.value)}
+            className="pl-9 pr-8"
+          />
+          {searching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />}
+        </div>
+        {showDropdown && searchResults.length > 0 && (
+          <div className="absolute z-50 top-full mt-1 w-full bg-white border rounded-lg shadow-lg max-h-60 overflow-y-auto">
+            {searchResults.map((p: any) => (
+              <button
+                key={p.id}
+                className="w-full text-left px-3 py-2 hover:bg-muted/80 transition-colors flex items-center gap-3 text-sm"
+                onClick={() => selectPatient(p)}
+              >
+                <div className="flex-1 min-w-0">
+                  <span className="font-medium">{p.firstName} {p.lastName}</span>
+                  <span className="text-muted-foreground ml-2">({p.folderNumber})</span>
+                </div>
+                <span className="text-xs text-muted-foreground">{p.phone}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {loading && <CardSkeleton />}
+
+      {selectedPatient && !loading && (
+        <div className="space-y-6">
+          {/* Personal Info */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Heart className="w-4 h-4 text-emerald-600" />
+                Informations Personnelles
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                <div>
+                  <p className="text-xs text-muted-foreground">Nom complet</p>
+                  <p className="text-sm font-medium">{selectedPatient.firstName} {selectedPatient.lastName}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">N° Dossier</p>
+                  <p className="text-sm font-mono font-medium">{selectedPatient.folderNumber}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Âge</p>
+                  <p className="text-sm font-medium">{getAge(selectedPatient.dateOfBirth)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Sexe</p>
+                  <p className="text-sm font-medium">{selectedPatient.gender === 'M' ? 'Masculin' : 'Féminin'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Groupe Sanguin</p>
+                  <p className="text-sm font-medium">{selectedPatient.bloodType || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Téléphone</p>
+                  <p className="text-sm font-medium">{selectedPatient.phone}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Adresse</p>
+                  <p className="text-sm font-medium">{selectedPatient.address || '—'}{selectedPatient.city ? `, ${selectedPatient.city}` : ''}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Assurance</p>
+                  <p className="text-sm font-medium">{selectedPatient.insuranceProvider || '—'} {selectedPatient.insuranceNumber ? `(${selectedPatient.insuranceNumber})` : ''}</p>
+                </div>
+              </div>
+              {(selectedPatient.allergies || selectedPatient.medicalHistory) && (
+                <div className="mt-4 pt-4 border-t space-y-2">
+                  {selectedPatient.allergies && (
+                    <div>
+                      <p className="text-xs text-muted-foreground">Allergies</p>
+                      <p className="text-sm font-medium text-red-700">{selectedPatient.allergies}</p>
+                    </div>
+                  )}
+                  {selectedPatient.medicalHistory && (
+                    <div>
+                      <p className="text-xs text-muted-foreground">Antécédents médicaux</p>
+                      <p className="text-sm">{selectedPatient.medicalHistory}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Consultations */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Stethoscope className="w-4 h-4 text-emerald-600" />
+                Consultations ({selectedPatient.consultations?.length || 0})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              {(!selectedPatient.consultations || selectedPatient.consultations.length === 0) ? (
+                <div className="text-center py-8 text-muted-foreground text-sm">Aucune consultation</div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-xs">Date</TableHead>
+                      <TableHead className="text-xs">Médecin</TableHead>
+                      <TableHead className="text-xs">Motif</TableHead>
+                      <TableHead className="text-xs">Diagnostic</TableHead>
+                      <TableHead className="text-xs">Statut</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {selectedPatient.consultations.map((c: any) => (
+                      <TableRow key={c.id}>
+                        <TableCell className="text-xs">{fmtDateTime(c.createdAt)}</TableCell>
+                        <TableCell className="text-xs">Dr. {c.staff?.firstName} {c.staff?.lastName}</TableCell>
+                        <TableCell className="text-xs max-w-[180px] truncate">{c.chiefComplaint || '—'}</TableCell>
+                        <TableCell className="text-xs max-w-[180px] truncate">{c.diagnosis || '—'}</TableCell>
+                        <TableCell className="text-xs">
+                          <Badge variant="outline" className={
+                            c.status === 'termine' ? 'bg-emerald-100 text-emerald-800 border-emerald-300' :
+                            c.status === 'en_cours' ? 'bg-orange-100 text-orange-800 border-orange-300' :
+                            'bg-blue-100 text-blue-800 border-blue-300'
+                          }>
+                            {c.status === 'termine' ? 'Terminée' : c.status === 'en_cours' ? 'En cours' : 'Planifiée'}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Prescriptions */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Pill className="w-4 h-4 text-emerald-600" />
+                Ordonnances ({selectedPatient.prescriptions?.length || 0})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {(!selectedPatient.prescriptions || selectedPatient.prescriptions.length === 0) ? (
+                <div className="text-center py-8 text-muted-foreground text-sm">Aucune ordonnance</div>
+              ) : (
+                <div className="space-y-3 max-h-96 overflow-y-auto">
+                  {selectedPatient.prescriptions.map((rx: any) => (
+                    <div key={rx.id} className="border rounded-lg p-3 space-y-2">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-medium">{fmtDateTime(rx.createdAt)}</span>
+                        <span className="text-muted-foreground">Dr. {rx.staff?.firstName} {rx.staff?.lastName}</span>
+                      </div>
+                      {rx.items && rx.items.length > 0 && (
+                        <div className="text-xs space-y-1">
+                          {rx.items.map((item: any, i: number) => (
+                            <div key={i} className="flex gap-4">
+                              <span className="font-medium">{item.medicationName}</span>
+                              <span className="text-muted-foreground">{item.dosage} — {item.frequency} — {item.duration}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Invoices */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Receipt className="w-4 h-4 text-emerald-600" />
+                Factures ({selectedPatient.invoices?.length || 0})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              {(!selectedPatient.invoices || selectedPatient.invoices.length === 0) ? (
+                <div className="text-center py-8 text-muted-foreground text-sm">Aucune facture</div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-xs">N° Facture</TableHead>
+                      <TableHead className="text-xs">Montant</TableHead>
+                      <TableHead className="text-xs">Payé</TableHead>
+                      <TableHead className="text-xs">Statut</TableHead>
+                      <TableHead className="text-xs">Date</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {selectedPatient.invoices.map((inv: any) => {
+                      const st = STATUS_INVOICE[inv.status] || STATUS_INVOICE.impayee
+                      return (
+                        <TableRow key={inv.id}>
+                          <TableCell className="text-xs font-mono">{inv.invoiceNumber}</TableCell>
+                          <TableCell className="text-xs font-medium">{fmtCurrency(inv.totalAmount)}</TableCell>
+                          <TableCell className="text-xs">{fmtCurrency(inv.paidAmount)}</TableCell>
+                          <TableCell className="text-xs">
+                            <Badge variant="outline" className={st.className}>{st.label}</Badge>
+                          </TableCell>
+                          <TableCell className="text-xs">{fmtDate(inv.createdAt)}</TableCell>
+                        </TableRow>
+                      )
+                    })}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Vital Signs History */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Activity className="w-4 h-4 text-emerald-600" />
+                Constantes Vitales ({selectedPatient.vitals?.length || 0})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              {(!selectedPatient.vitals || selectedPatient.vitals.length === 0) ? (
+                <div className="text-center py-8 text-muted-foreground text-sm">Aucune mesure enregistrée</div>
+              ) : (
+                <div className="max-h-96 overflow-y-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-xs">Date</TableHead>
+                        <TableHead className="text-xs">Poids</TableHead>
+                        <TableHead className="text-xs">Taille</TableHead>
+                        <TableHead className="text-xs">Température</TableHead>
+                        <TableHead className="text-xs">TA</TableHead>
+                        <TableHead className="text-xs">FC</TableHead>
+                        <TableHead className="text-xs">SpO2</TableHead>
+                        <TableHead className="text-xs">FR</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {selectedPatient.vitals.map((v: any) => (
+                        <TableRow key={v.id}>
+                          <TableCell className="text-xs">{fmtDateTime(v.createdAt)}</TableCell>
+                          <TableCell className="text-xs">{v.weight != null ? `${v.weight} kg` : '—'}</TableCell>
+                          <TableCell className="text-xs">{v.height != null ? `${v.height} cm` : '—'}</TableCell>
+                          <TableCell className="text-xs">{v.temperature != null ? `${v.temperature} °C` : '—'}</TableCell>
+                          <TableCell className="text-xs">{v.bloodPressureSystolic != null ? `${v.bloodPressureSystolic}/${v.bloodPressureDiastolic}` : '—'}</TableCell>
+                          <TableCell className="text-xs">{v.heartRate != null ? `${v.heartRate} bpm` : '—'}</TableCell>
+                          <TableCell className="text-xs">{v.oxygenSaturation != null ? `${v.oxygenSaturation}%` : '—'}</TableCell>
+                          <TableCell className="text-xs">{v.respiratoryRate != null ? `${v.respiratoryRate}/min` : '—'}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ═══════════════════════════════════════════════════
+   LABORATOIRE VIEW
+   ═══════════════════════════════════════════════════ */
+
+function LaboView() {
+  const [labs, setLabs] = useState<any[]>([])
+  const [patients, setPatients] = useState<any[]>([])
+  const [staffList, setStaffList] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [form, setForm] = useState({
+    patientId: '', staffId: '', analysisType: 'Hémogramme', notes: '',
+  })
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    try {
+      const [lRes, pRes, sRes] = await Promise.all([
+        fetch('/api/labs'),
+        fetch('/api/patients?limit=100'),
+        fetch('/api/staff'),
+      ])
+      setLabs(await lRes.json())
+      const pData = await pRes.json()
+      setPatients(pData.data || [])
+      setStaffList(await sRes.json())
+    } catch { toast.error('Erreur de chargement') } finally { setLoading(false) }
+  }, [])
+
+  useEffect(() => { load() }, [load])
+
+  const handleSave = async () => {
+    if (!form.patientId || !form.staffId) {
+      toast.error('Patient et médecin sont requis')
+      return
+    }
+    setSaving(true)
+    try {
+      const res = await fetch('/api/labs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      })
+      if (!res.ok) { const d = await res.json(); toast.error(d.error); return }
+      toast.success('Demande de laboratoire créée')
+      setDialogOpen(false)
+      setForm({ patientId: '', staffId: '', analysisType: 'Hémogramme', notes: '' })
+      load()
+    } catch { toast.error('Erreur serveur') } finally { setSaving(false) }
+  }
+
+  const updateForm = (f: string, v: string) => setForm((p) => ({ ...p, [f]: v }))
+
+  const handleStatusChange = async (id: string, newStatus: string) => {
+    try {
+      const res = await fetch('/api/labs', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status: newStatus }),
+      })
+      if (res.ok) {
+        toast.success('Statut mis à jour')
+        load()
+      }
+    } catch { toast.error('Erreur') }
+  }
+
+  // Generate lab numbers client-side for display
+  const getLabNumber = (index: number) => {
+    const year = new Date().getFullYear()
+    return `LAB-${year}-${String(labs.length - index).padStart(4, '0')}`
+  }
+
+  return (
+    <div className="space-y-6 animate-fade-in-up">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">Laboratoire</h1>
+          <p className="text-muted-foreground text-sm mt-1">{labs.length} demande{labs.length > 1 ? 's' : ''}</p>
+        </div>
+        <Button onClick={() => setDialogOpen(true)} className="bg-emerald-700 hover:bg-emerald-800 text-white">
+          <Plus className="w-4 h-4 mr-2" />
+          Nouvelle Demande
+        </Button>
+      </div>
+
+      <Card>
+        <CardContent className="p-0">
+          {loading ? (
+            <TableSkeleton rows={6} cols={6} />
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-xs">N°</TableHead>
+                  <TableHead className="text-xs">Patient</TableHead>
+                  <TableHead className="text-xs">Médecin</TableHead>
+                  <TableHead className="text-xs">Type d&apos;analyse</TableHead>
+                  <TableHead className="text-xs">Statut</TableHead>
+                  <TableHead className="text-xs">Date</TableHead>
+                  <TableHead className="text-xs"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {labs.map((lab: any, idx: number) => {
+                  const st = STATUS_LAB[lab.status] || STATUS_LAB.en_attente
+                  return (
+                    <TableRow key={lab.id}>
+                      <TableCell className="text-xs font-mono font-medium">{lab.labNumber || getLabNumber(idx)}</TableCell>
+                      <TableCell className="text-xs font-medium">
+                        {lab.patient?.firstName} {lab.patient?.lastName}
+                      </TableCell>
+                      <TableCell className="text-xs">Dr. {lab.staff?.firstName} {lab.staff?.lastName}</TableCell>
+                      <TableCell className="text-xs">{lab.analysisType}</TableCell>
+                      <TableCell className="text-xs">
+                        <Badge variant="outline" className={st.className}>{st.label}</Badge>
+                      </TableCell>
+                      <TableCell className="text-xs">{fmtDateTime(lab.requestedAt)}</TableCell>
+                      <TableCell className="text-xs">
+                        {lab.status === 'en_attente' && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleStatusChange(lab.id, 'en_cours')}
+                            className="h-7 text-xs"
+                          >
+                            Démarrer
+                          </Button>
+                        )}
+                        {lab.status === 'en_cours' && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleStatusChange(lab.id, 'termine')}
+                            className="h-7 text-xs text-emerald-700"
+                          >
+                            Terminer
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
+                {labs.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
+                      <Microscope className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                      Aucune demande de laboratoire
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Create Dialog */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader><DialogTitle>Nouvelle Demande de Laboratoire</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Patient *</Label>
+              <Select value={form.patientId} onValueChange={(v) => updateForm('patientId', v)}>
+                <SelectTrigger className="w-full"><SelectValue placeholder="Sélectionner un patient" /></SelectTrigger>
+                <SelectContent className="max-h-60">
+                  {patients.map((p: any) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.firstName} {p.lastName} ({p.folderNumber})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Médecin demandeur *</Label>
+              <Select value={form.staffId} onValueChange={(v) => updateForm('staffId', v)}>
+                <SelectTrigger className="w-full"><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+                <SelectContent className="max-h-60">
+                  {staffList.map((s: any) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      Dr. {s.firstName} {s.lastName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Type d&apos;analyse *</Label>
+              <Select value={form.analysisType} onValueChange={(v) => updateForm('analysisType', v)}>
+                <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {LAB_TYPES.map((t) => (
+                    <SelectItem key={t} value={t}>{t}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Notes</Label>
+              <Input value={form.notes} onChange={(e) => updateForm('notes', e.target.value)} placeholder="Notes ou instructions" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>Annuler</Button>
+            <Button onClick={handleSave} disabled={saving} className="bg-emerald-700 hover:bg-emerald-800 text-white">
+              {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Enregistrer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
@@ -2329,12 +3019,14 @@ export default function HomePage() {
     switch (currentView) {
       case 'dashboard': return <DashboardView />
       case 'patients': return <PatientsView />
+      case 'dme': return <DmeView />
       case 'departments': return <DepartmentsView />
       case 'staff': return <StaffView />
       case 'appointments': return <AppointmentsView />
       case 'consultations': return <ConsultationsView />
       case 'invoices': return <InvoicesView />
       case 'medications': return <MedicationsView />
+      case 'labs': return <LaboView />
       case 'settings': return <SettingsView />
       case 'platforms': return <PlatformsView />
       default: return <DashboardView />

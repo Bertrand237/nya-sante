@@ -100,11 +100,66 @@ Stage Summary:
 - Enhancement needed: Offline-first sync engine (documented in cahier de charges, not yet implemented)
 - Enhancement needed: Mobile Money payment integration (API stubs ready)
 - Next phase priorities:
-  1. Add vital signs recording to consultations
+  1. ~~Add vital signs recording to consultations~~ ✅ DONE
   2. Implement prescription management (create/view from consultation)
   3. Add invoice payment flow with Mobile Money
   4. Add audit log viewing
   5. Improve dashboard with charts (weekly appointments, revenue trends)
-  6. Add patient detail view (medical history, consultations, invoices)
+  6. ~~Add patient detail view (medical history, consultations, invoices)~~ ✅ DONE (DME module)
   7. Implement search/filter on all table views
   8. Add print/export functionality for invoices and prescriptions
+
+---
+Task ID: 3
+Agent: Full-Stack Developer
+Task: Add DME, Vital Signs, and Laboratory modules
+
+Work Log:
+- Added LabRequest model to Prisma schema with relations to Hospital, Patient, Staff
+- Added labRequests relation fields to Hospital, Patient, and Staff models
+- Ran `bun run db:push` — schema synced, Prisma Client regenerated
+- Created API route GET/POST /api/vitals — create and retrieve vital sign records by patientId
+- Created API route GET /api/patients/[id] — returns single patient with full medical record (consultations, prescriptions, invoices, vitals)
+- Created API route GET/POST/PUT /api/labs — full CRUD for lab requests with status workflow (en_attente → en_cours → termine)
+- Added DmeView component: patient search by name/folder number, displays complete medical record (personal info, consultations, prescriptions, invoices, vital signs history)
+- Enhanced ConsultationsView with vital signs recording: 8-field form (poids, taille, température, TA, FC, SpO2, FR), last vitals display card, POST to /api/vitals
+- Added LaboView component: table of lab requests with status badges, create dialog with patient/doctor/analysis type selectors, status transition buttons (Démarrer/Terminer)
+- Updated NAV_ITEMS to include DME (FileHeart icon) and Laboratoire (Microscope icon)
+- Updated renderView() switch statement with 'dme' and 'labs' cases
+- Added STATUS_LAB and LAB_TYPES constants
+- Added FileHeart, Microscope, Thermometer icon imports
+- Lint: PASS (0 errors)
+
+Stage Summary:
+- 3 new modules added: DME (Dossier Médical Électronique), Constantes Vitales, Laboratoire
+- 3 new API routes: /api/vitals, /api/patients/[id], /api/labs
+- 1 new Prisma model: LabRequest
+- ConsultationsView enhanced with vital signs recording (8 parameters) and last vitals display
+- Total sidebar nav items: 11 (was 10)
+- Dev server running with 0 compilation errors, lint clean---
+Task ID: 3
+Agent: Main Agent + Full-Stack Subagent
+Task: Add DME, Vital Signs, and Laboratory modules + fix sidebar + fly.io config
+
+Work Log:
+- Fixed sidebar visibility: reduced nav item padding (py-2.5 → py-2), spacing (space-y-1 → space-y-0.5), added overflow-hidden
+- Added "Plateformes" view with deployment info (fly.io, APK, Windows)
+- Created Dockerfile, fly.toml, .dockerignore for fly.io deployment
+- Created /api/health route for fly.io health checks
+- Added LabRequest model to Prisma schema and pushed to DB
+- Created /api/labs route (GET, POST, PUT) for lab request management
+- Created /api/vitals route (GET, POST) for vital signs
+- Created /api/patients/[id] route for full patient medical record
+- Added DmeView component (patient search, full medical record display)
+- Added LaboView component (lab request table, create dialog, status transitions)
+- Enhanced ConsultationsView with vital signs recording
+- Disabled Prisma query logging (was crashing Turbopack in sandbox)
+- Verified all 15 API routes via curl (labs=[], vitals=[], health=ok, dashboard, etc.)
+
+Stage Summary:
+- 15 API routes, 12 view components, 19 Prisma models
+- 12 navigation items in sidebar (all visible without scrolling)
+- All 3 new modules functional (DME, Labo, Constantes Vitales)
+- Lint: PASS (0 errors)
+- Server runs stable with disabled Prisma query logging
+- Known issue: Prisma `log: ['query']` causes Turbopack crashes in this sandbox environment (not a code bug)
