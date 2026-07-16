@@ -3,14 +3,19 @@ import { db } from '@/lib/db'
 
 const HOSPITAL_ID = process.env.HOSPITAL_ID || 'hosp_demo_001'
 
-// GET /api/patients?q=...&page=1&limit=20
+// GET /api/patients?q=...&page=1&limit=20&gender=...&bloodType=...&status=...&sortBy=...&sortDir=...
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url)
     const q = searchParams.get('q') || ''
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10))
-    const limit = Math.max(1, Math.min(100, parseInt(searchParams.get('limit') || '20', 10)))
+    const limit = Math.max(1, Math.min(100, parseInt(searchParams.get('limit') || '100', 10)))
     const skip = (page - 1) * limit
+    const gender = searchParams.get('gender') || ''
+    const bloodType = searchParams.get('bloodType') || ''
+    const status = searchParams.get('status') || ''
+    const sortBy = searchParams.get('sortBy') || 'createdAt'
+    const sortDir = searchParams.get('sortDir') || 'desc'
 
     const where: Record<string, unknown> = { hospitalId: HOSPITAL_ID }
 
@@ -23,10 +28,28 @@ export async function GET(req: NextRequest) {
       ]
     }
 
+    if (gender) {
+      where.gender = gender
+    }
+
+    if (bloodType) {
+      where.bloodType = bloodType
+    }
+
+    if (status === 'actif') {
+      where.isAlive = true
+    } else if (status === 'inactif') {
+      where.isAlive = false
+    }
+
+    const validSortFields = ['createdAt', 'lastName', 'folderNumber']
+    const orderByField = validSortFields.includes(sortBy) ? sortBy : 'createdAt'
+    const orderByDir = sortDir === 'asc' ? 'asc' : 'desc'
+
     const [data, total] = await Promise.all([
       db.patient.findMany({
         where,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { [orderByField]: orderByDir },
         skip,
         take: limit,
       }),

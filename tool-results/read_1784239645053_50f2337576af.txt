@@ -1,0 +1,572 @@
+  2529→function MedicationsView() {
+  2530→  const [medications, setMedications] = useState<any[]>([])
+  2531→  const [loading, setLoading] = useState(true)
+  2532→  const [search, setSearch] = useState('')
+  2533→
+  2534→  const load = useCallback(async () => {
+  2535→    setLoading(true)
+  2536→    try {
+  2537→      const res = await fetch(`/api/medications?q=${encodeURIComponent(search)}`)
+  2538→      setMedications(await res.json())
+  2539→    } catch { toast.error('Erreur de chargement') } finally { setLoading(false) }
+  2540→  }, [search])
+  2541→
+  2542→  useEffect(() => { load() }, [load])
+  2543→
+  2544→  return (
+  2545→    <div className="space-y-6 animate-fade-in-up">
+  2546→      <div>
+  2547→        <h1 className="text-2xl font-bold">Pharmacie</h1>
+  2548→        <p className="text-muted-foreground text-sm mt-1">{medications.length} médicament{medications.length > 1 ? 's' : ''}</p>
+  2549→      </div>
+  2550→
+  2551→      <div className="relative max-w-md">
+  2552→        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+  2553→        <Input
+  2554→          placeholder="Rechercher un médicament..."
+  2555→          value={search}
+  2556→          onChange={(e) => setSearch(e.target.value)}
+  2557→          className="pl-9"
+  2558→        />
+  2559→      </div>
+  2560→
+  2561→      <Card>
+  2562→        <CardContent className="p-0">
+  2563→          {loading ? (
+  2564→            <TableSkeleton rows={6} cols={6} />
+  2565→          ) : (
+  2566→            <Table>
+  2567→              <TableHeader>
+  2568→                <TableRow>
+  2569→                  <TableHead className="text-xs">Médicament</TableHead>
+  2570→                  <TableHead className="text-xs">Stock</TableHead>
+  2571→                  <TableHead className="text-xs">Prix Vente</TableHead>
+  2572→                  <TableHead className="text-xs">Fournisseur</TableHead>
+  2573→                  <TableHead className="text-xs">Péremption</TableHead>
+  2574→                  <TableHead className="text-xs">Statut</TableHead>
+  2575→                </TableRow>
+  2576→              </TableHeader>
+  2577→              <TableBody>
+  2578→                {medications.map((med: any) => (
+  2579→                  <TableRow key={med.id} className={med.isLowStock ? 'bg-red-50/50' : ''}>
+  2580→                    <TableCell className="text-xs">
+  2581→                      <div className="font-medium">{med.name}</div>
+  2582→                      {med.genericName && <div className="text-muted-foreground">{med.genericName}</div>}
+  2583→                    </TableCell>
+  2584→                    <TableCell className="text-xs">
+  2585→                      <span className={med.isLowStock ? 'font-bold text-red-700' : ''}>
+  2586→                        {med.stockQuantity}
+  2587→                      </span>
+  2588→                      <span className="text-muted-foreground ml-1">({med.minStockAlert} min)</span>
+  2589→                    </TableCell>
+  2590→                    <TableCell className="text-xs font-medium">{fmtCurrency(med.salePrice)}</TableCell>
+  2591→                    <TableCell className="text-xs">{med.supplier || '—'}</TableCell>
+  2592→                    <TableCell className="text-xs">{med.expiryDate ? fmtDate(med.expiryDate) : '—'}</TableCell>
+  2593→                    <TableCell className="text-xs">
+  2594→                      {med.isLowStock ? (
+  2595→                        <Badge variant="outline" className="bg-red-100 text-red-800 border-red-300">
+  2596→                          <AlertTriangle className="w-3 h-3 mr-1" />
+  2597→                          Stock bas
+  2598→                        </Badge>
+  2599→                      ) : (
+  2600→                        <Badge variant="outline" className="bg-emerald-100 text-emerald-800 border-emerald-300">
+  2601→                          <CheckCircle2 className="w-3 h-3 mr-1" />
+  2602→                          En stock
+  2603→                        </Badge>
+  2604→                      )}
+  2605→                    </TableCell>
+  2606→                  </TableRow>
+  2607→                ))}
+  2608→                {medications.length === 0 && (
+  2609→                  <TableRow>
+  2610→                    <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
+  2611→                      <Pill className="w-8 h-8 mx-auto mb-2 opacity-30" />
+  2612→                      Aucun médicament trouvé
+  2613→                    </TableCell>
+  2614→                  </TableRow>
+  2615→                )}
+  2616→              </TableBody>
+  2617→            </Table>
+  2618→          )}
+  2619→        </CardContent>
+  2620→      </Card>
+  2621→    </div>
+  2622→  )
+  2623→}
+  2624→
+  2625→/* ═══════════════════════════════════════════════════
+  2626→   SETTINGS VIEW
+  2627→   ═══════════════════════════════════════════════════ */
+  2628→
+  2629→function SettingsView() {
+  2630→  const [settings, setSettings] = useState<Record<string, string>>({})
+  2631→  const [loading, setLoading] = useState(true)
+  2632→  const { user } = useAppStore()
+  2633→
+  2634→  useEffect(() => {
+  2635→    const load = async () => {
+  2636→      try {
+  2637→        const res = await fetch('/api/settings')
+  2638→        setSettings(await res.json())
+  2639→      } catch { toast.error('Erreur de chargement') } finally { setLoading(false) }
+  2640→    }
+  2641→    load()
+  2642→  }, [])
+  2643→
+  2644→  const settingLabels: Record<string, string> = {
+  2645→    hospital_name: 'Nom de l\'hôpital',
+  2646→    hospital_address: 'Adresse',
+  2647→    hospital_phone: 'Téléphone',
+  2648→    hospital_email: 'Email',
+  2649→    hospital_city: 'Ville',
+  2650→    hospital_country: 'Pays',
+  2651→    currency: 'Devise',
+  2652→    language: 'Langue',
+  2653→  }
+  2654→
+  2655→  return (
+  2656→    <div className="space-y-6 animate-fade-in-up">
+  2657→      <div>
+  2658→        <h1 className="text-2xl font-bold">Paramètres</h1>
+  2659→        <p className="text-muted-foreground text-sm mt-1">Configuration de l&apos;établissement</p>
+  2660→      </div>
+  2661→
+  2662→      {/* Hospital Info */}
+  2663→      <Card>
+  2664→        <CardHeader>
+  2665→          <CardTitle className="text-base">Informations de l&apos;établissement</CardTitle>
+  2666→        </CardHeader>
+  2667→        <CardContent>
+  2668→          {loading ? (
+  2669→            <div className="space-y-3">
+  2670→              {Array.from({ length: 4 }).map((_, i) => (
+  2671→                <Skeleton key={i} className="h-10 w-full" />
+  2672→              ))}
+  2673→            </div>
+  2674→          ) : (
+  2675→            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+  2676→              <div className="space-y-1">
+  2677→                <Label className="text-xs text-muted-foreground">Nom</Label>
+  2678→                <p className="text-sm font-medium">{user?.hospital?.name || settings.hospital_name || 'Clinique Centrale NYA'}</p>
+  2679→              </div>
+  2680→              <div className="space-y-1">
+  2681→                <Label className="text-xs text-muted-foreground">Ville</Label>
+  2682→                <p className="text-sm font-medium">{user?.hospital?.city || settings.hospital_city || 'Douala'}</p>
+  2683→              </div>
+  2684→              <div className="space-y-1">
+  2685→                <Label className="text-xs text-muted-foreground">Téléphone</Label>
+  2686→                <p className="text-sm font-medium">{settings.hospital_phone || '—'}</p>
+  2687→              </div>
+  2688→              <div className="space-y-1">
+  2689→                <Label className="text-xs text-muted-foreground">Email</Label>
+  2690→                <p className="text-sm font-medium">{settings.hospital_email || '—'}</p>
+  2691→              </div>
+  2692→              <div className="space-y-1 sm:col-span-2">
+  2693→                <Label className="text-xs text-muted-foreground">Adresse</Label>
+  2694→                <p className="text-sm font-medium">{settings.hospital_address || '—'}</p>
+  2695→              </div>
+  2696→            </div>
+  2697→          )}
+  2698→        </CardContent>
+  2699→      </Card>
+  2700→
+  2701→      {/* All Settings */}
+  2702→      <Card>
+  2703→        <CardHeader>
+  2704→          <CardTitle className="text-base">Configuration système</CardTitle>
+  2705→        </CardHeader>
+  2706→        <CardContent>
+  2707→          {loading ? (
+  2708→            <div className="space-y-3">
+  2709→              {Array.from({ length: 5 }).map((_, i) => (
+  2710→                <Skeleton key={i} className="h-10 w-full" />
+  2711→              ))}
+  2712→            </div>
+  2713→          ) : Object.keys(settings).length > 0 ? (
+  2714→            <div className="space-y-3">
+  2715→              {Object.entries(settings).map(([key, value]) => (
+  2716→                <div key={key} className="flex items-center justify-between py-2 border-b last:border-0">
+  2717→                  <span className="text-sm text-muted-foreground">{settingLabels[key] || key}</span>
+  2718→                  <span className="text-sm font-medium">{value || '—'}</span>
+  2719→                </div>
+  2720→              ))}
+  2721→            </div>
+  2722→          ) : (
+  2723→            <p className="text-sm text-muted-foreground text-center py-8">
+  2724→              Aucun paramètre configuré
+  2725→            </p>
+  2726→          )}
+  2727→        </CardContent>
+  2728→      </Card>
+  2729→
+  2730→      {/* Connected User Info */}
+  2731→      <Card>
+  2732→        <CardHeader>
+  2733→          <CardTitle className="text-base">Profil connecté</CardTitle>
+  2734→        </CardHeader>
+  2735→        <CardContent>
+  2736→          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+  2737→            <div className="space-y-1">
+  2738→              <Label className="text-xs text-muted-foreground">Nom complet</Label>
+  2739→              <p className="text-sm font-medium">{user?.firstName} {user?.lastName}</p>
+  2740→            </div>
+  2741→            <div className="space-y-1">
+  2742→              <Label className="text-xs text-muted-foreground">Téléphone</Label>
+  2743→              <p className="text-sm font-medium">{user?.phone}</p>
+  2744→            </div>
+  2745→            <div className="space-y-1">
+  2746→              <Label className="text-xs text-muted-foreground">Rôle</Label>
+  2747→              <p className="text-sm font-medium">{user?.role?.label || user?.role?.name || '—'}</p>
+  2748→            </div>
+  2749→            <div className="space-y-1">
+  2750→              <Label className="text-xs text-muted-foreground">Spécialité</Label>
+  2751→              <p className="text-sm font-medium">{user?.specialty || '—'}</p>
+  2752→            </div>
+  2753→            <div className="space-y-1">
+  2754→              <Label className="text-xs text-muted-foreground">Département</Label>
+  2755→              <p className="text-sm font-medium">{user?.department?.name || '—'}</p>
+  2756→            </div>
+  2757→          </div>
+  2758→        </CardContent>
+  2759→      </Card>
+  2760→    </div>
+  2761→  )
+  2762→}
+  2763→
+  2764→/* ═══════════════════════════════════════════════════
+  2765→   DME — DOSSIER MÉDICAL ÉLECTRONIQUE
+  2766→   ═══════════════════════════════════════════════════ */
+  2767→
+  2768→function DmeView() {
+  2769→  const [search, setSearch] = useState('')
+  2770→  const [searchResults, setSearchResults] = useState<any[]>([])
+  2771→  const [selectedPatient, setSelectedPatient] = useState<any>(null)
+  2772→  const [loading, setLoading] = useState(false)
+  2773→  const [searching, setSearching] = useState(false)
+  2774→  const [showDropdown, setShowDropdown] = useState(false)
+  2775→
+  2776→  const handleSearch = useCallback(async (q: string) => {
+  2777→    setSearch(q)
+  2778→    if (q.length < 2) { setSearchResults([]); setShowDropdown(false); return }
+  2779→    setSearching(true)
+  2780→    try {
+  2781→      const res = await fetch(`/api/patients?q=${encodeURIComponent(q)}`)
+  2782→      const data = await res.json()
+  2783→      setSearchResults(data.data || [])
+  2784→      setShowDropdown(true)
+  2785→    } catch { setSearchResults([]) } finally { setSearching(false) }
+  2786→  }, [])
+  2787→
+  2788→  const selectPatient = async (p: any) => {
+  2789→    setSelectedPatient(null)
+  2790→    setShowDropdown(false)
+  2791→    setSearch(`${p.firstName} ${p.lastName}`)
+  2792→    setLoading(true)
+  2793→    try {
+  2794→      const res = await fetch(`/api/patients/${p.id}`)
+  2795→      if (res.ok) {
+  2796→        setSelectedPatient(await res.json())
+  2797→      } else {
+  2798→        toast.error('Patient non trouvé')
+  2799→      }
+  2800→    } catch { toast.error('Erreur de chargement du dossier') } finally { setLoading(false) }
+  2801→  }
+  2802→
+  2803→  const getAge = (dob: string | null) => {
+  2804→    if (!dob) return '—'
+  2805→    const d = new Date(dob)
+  2806→    const now = new Date()
+  2807→    let age = now.getFullYear() - d.getFullYear()
+  2808→    if (now.getMonth() < d.getMonth() || (now.getMonth() === d.getMonth() && now.getDate() < d.getDate())) age--
+  2809→    return `${age} ans`
+  2810→  }
+  2811→
+  2812→  return (
+  2813→    <div className="space-y-6 animate-fade-in-up">
+  2814→      <div>
+  2815→        <h1 className="text-2xl font-bold">Dossier Médical Électronique</h1>
+  2816→        <p className="text-muted-foreground text-sm mt-1">Rechercher un patient pour accéder à son dossier complet</p>
+  2817→      </div>
+  2818→
+  2819→      {/* Patient Search */}
+  2820→      <div className="relative max-w-lg">
+  2821→        <div className="relative">
+  2822→          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+  2823→          <Input
+  2824→            placeholder="Rechercher par nom ou numéro de dossier..."
+  2825→            value={search}
+  2826→            onChange={(e) => handleSearch(e.target.value)}
+  2827→            className="pl-9 pr-8"
+  2828→          />
+  2829→          {searching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />}
+  2830→        </div>
+  2831→        {showDropdown && searchResults.length > 0 && (
+  2832→          <div className="absolute z-50 top-full mt-1 w-full bg-white border rounded-lg shadow-lg max-h-60 overflow-y-auto">
+  2833→            {searchResults.map((p: any) => (
+  2834→              <button
+  2835→                key={p.id}
+  2836→                className="w-full text-left px-3 py-2 hover:bg-muted/80 transition-colors flex items-center gap-3 text-sm"
+  2837→                onClick={() => selectPatient(p)}
+  2838→              >
+  2839→                <div className="flex-1 min-w-0">
+  2840→                  <span className="font-medium">{p.firstName} {p.lastName}</span>
+  2841→                  <span className="text-muted-foreground ml-2">({p.folderNumber})</span>
+  2842→                </div>
+  2843→                <span className="text-xs text-muted-foreground">{p.phone}</span>
+  2844→              </button>
+  2845→            ))}
+  2846→          </div>
+  2847→        )}
+  2848→      </div>
+  2849→
+  2850→      {loading && <CardSkeleton />}
+  2851→
+  2852→      {selectedPatient && !loading && (
+  2853→        <div className="space-y-6">
+  2854→          {/* Personal Info */}
+  2855→          <Card>
+  2856→            <CardHeader className="pb-3">
+  2857→              <CardTitle className="text-base flex items-center gap-2">
+  2858→                <Heart className="w-4 h-4 text-emerald-600" />
+  2859→                Informations Personnelles
+  2860→              </CardTitle>
+  2861→            </CardHeader>
+  2862→            <CardContent>
+  2863→              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+  2864→                <div>
+  2865→                  <p className="text-xs text-muted-foreground">Nom complet</p>
+  2866→                  <p className="text-sm font-medium">{selectedPatient.firstName} {selectedPatient.lastName}</p>
+  2867→                </div>
+  2868→                <div>
+  2869→                  <p className="text-xs text-muted-foreground">N° Dossier</p>
+  2870→                  <p className="text-sm font-mono font-medium">{selectedPatient.folderNumber}</p>
+  2871→                </div>
+  2872→                <div>
+  2873→                  <p className="text-xs text-muted-foreground">Âge</p>
+  2874→                  <p className="text-sm font-medium">{getAge(selectedPatient.dateOfBirth)}</p>
+  2875→                </div>
+  2876→                <div>
+  2877→                  <p className="text-xs text-muted-foreground">Sexe</p>
+  2878→                  <p className="text-sm font-medium">{selectedPatient.gender === 'M' ? 'Masculin' : 'Féminin'}</p>
+  2879→                </div>
+  2880→                <div>
+  2881→                  <p className="text-xs text-muted-foreground">Groupe Sanguin</p>
+  2882→                  <p className="text-sm font-medium">{selectedPatient.bloodType || '—'}</p>
+  2883→                </div>
+  2884→                <div>
+  2885→                  <p className="text-xs text-muted-foreground">Téléphone</p>
+  2886→                  <p className="text-sm font-medium">{selectedPatient.phone}</p>
+  2887→                </div>
+  2888→                <div>
+  2889→                  <p className="text-xs text-muted-foreground">Adresse</p>
+  2890→                  <p className="text-sm font-medium">{selectedPatient.address || '—'}{selectedPatient.city ? `, ${selectedPatient.city}` : ''}</p>
+  2891→                </div>
+  2892→                <div>
+  2893→                  <p className="text-xs text-muted-foreground">Assurance</p>
+  2894→                  <p className="text-sm font-medium">{selectedPatient.insuranceProvider || '—'} {selectedPatient.insuranceNumber ? `(${selectedPatient.insuranceNumber})` : ''}</p>
+  2895→                </div>
+  2896→              </div>
+  2897→              {(selectedPatient.allergies || selectedPatient.medicalHistory) && (
+  2898→                <div className="mt-4 pt-4 border-t space-y-2">
+  2899→                  {selectedPatient.allergies && (
+  2900→                    <div>
+  2901→                      <p className="text-xs text-muted-foreground">Allergies</p>
+  2902→                      <p className="text-sm font-medium text-red-700">{selectedPatient.allergies}</p>
+  2903→                    </div>
+  2904→                  )}
+  2905→                  {selectedPatient.medicalHistory && (
+  2906→                    <div>
+  2907→                      <p className="text-xs text-muted-foreground">Antécédents médicaux</p>
+  2908→                      <p className="text-sm">{selectedPatient.medicalHistory}</p>
+  2909→                    </div>
+  2910→                  )}
+  2911→                </div>
+  2912→              )}
+  2913→            </CardContent>
+  2914→          </Card>
+  2915→
+  2916→          {/* Consultations */}
+  2917→          <Card>
+  2918→            <CardHeader className="pb-3">
+  2919→              <CardTitle className="text-base flex items-center gap-2">
+  2920→                <Stethoscope className="w-4 h-4 text-emerald-600" />
+  2921→                Consultations ({selectedPatient.consultations?.length || 0})
+  2922→              </CardTitle>
+  2923→            </CardHeader>
+  2924→            <CardContent className="p-0">
+  2925→              {(!selectedPatient.consultations || selectedPatient.consultations.length === 0) ? (
+  2926→                <div className="text-center py-8 text-muted-foreground text-sm">Aucune consultation</div>
+  2927→              ) : (
+  2928→                <Table>
+  2929→                  <TableHeader>
+  2930→                    <TableRow>
+  2931→                      <TableHead className="text-xs">Date</TableHead>
+  2932→                      <TableHead className="text-xs">Médecin</TableHead>
+  2933→                      <TableHead className="text-xs">Motif</TableHead>
+  2934→                      <TableHead className="text-xs">Diagnostic</TableHead>
+  2935→                      <TableHead className="text-xs">Statut</TableHead>
+  2936→                    </TableRow>
+  2937→                  </TableHeader>
+  2938→                  <TableBody>
+  2939→                    {selectedPatient.consultations.map((c: any) => (
+  2940→                      <TableRow key={c.id}>
+  2941→                        <TableCell className="text-xs">{fmtDateTime(c.createdAt)}</TableCell>
+  2942→                        <TableCell className="text-xs">Dr. {c.staff?.firstName} {c.staff?.lastName}</TableCell>
+  2943→                        <TableCell className="text-xs max-w-[180px] truncate">{c.chiefComplaint || '—'}</TableCell>
+  2944→                        <TableCell className="text-xs max-w-[180px] truncate">{c.diagnosis || '—'}</TableCell>
+  2945→                        <TableCell className="text-xs">
+  2946→                          <Badge variant="outline" className={
+  2947→                            c.status === 'termine' ? 'bg-emerald-100 text-emerald-800 border-emerald-300' :
+  2948→                            c.status === 'en_cours' ? 'bg-orange-100 text-orange-800 border-orange-300' :
+  2949→                            'bg-blue-100 text-blue-800 border-blue-300'
+  2950→                          }>
+  2951→                            {c.status === 'termine' ? 'Terminée' : c.status === 'en_cours' ? 'En cours' : 'Planifiée'}
+  2952→                          </Badge>
+  2953→                        </TableCell>
+  2954→                      </TableRow>
+  2955→                    ))}
+  2956→                  </TableBody>
+  2957→                </Table>
+  2958→              )}
+  2959→            </CardContent>
+  2960→          </Card>
+  2961→
+  2962→          {/* Prescriptions */}
+  2963→          <Card>
+  2964→            <CardHeader className="pb-3">
+  2965→              <CardTitle className="text-base flex items-center gap-2">
+  2966→                <Pill className="w-4 h-4 text-emerald-600" />
+  2967→                Ordonnances ({selectedPatient.prescriptions?.length || 0})
+  2968→              </CardTitle>
+  2969→            </CardHeader>
+  2970→            <CardContent>
+  2971→              {(!selectedPatient.prescriptions || selectedPatient.prescriptions.length === 0) ? (
+  2972→                <div className="text-center py-8 text-muted-foreground text-sm">Aucune ordonnance</div>
+  2973→              ) : (
+  2974→                <div className="space-y-3 max-h-96 overflow-y-auto">
+  2975→                  {selectedPatient.prescriptions.map((rx: any) => (
+  2976→                    <div key={rx.id} className="border rounded-lg p-3 space-y-2">
+  2977→                      <div className="flex items-center justify-between text-xs">
+  2978→                        <span className="font-medium">{fmtDateTime(rx.createdAt)}</span>
+  2979→                        <span className="text-muted-foreground">Dr. {rx.staff?.firstName} {rx.staff?.lastName}</span>
+  2980→                      </div>
+  2981→                      {rx.items && rx.items.length > 0 && (
+  2982→                        <div className="text-xs space-y-1">
+  2983→                          {rx.items.map((item: any, i: number) => (
+  2984→                            <div key={i} className="flex gap-4">
+  2985→                              <span className="font-medium">{item.medicationName}</span>
+  2986→                              <span className="text-muted-foreground">{item.dosage} — {item.frequency} — {item.duration}</span>
+  2987→                            </div>
+  2988→                          ))}
+  2989→                        </div>
+  2990→                      )}
+  2991→                    </div>
+  2992→                  ))}
+  2993→                </div>
+  2994→              )}
+  2995→            </CardContent>
+  2996→          </Card>
+  2997→
+  2998→          {/* Invoices */}
+  2999→          <Card>
+  3000→            <CardHeader className="pb-3">
+  3001→              <CardTitle className="text-base flex items-center gap-2">
+  3002→                <Receipt className="w-4 h-4 text-emerald-600" />
+  3003→                Factures ({selectedPatient.invoices?.length || 0})
+  3004→              </CardTitle>
+  3005→            </CardHeader>
+  3006→            <CardContent className="p-0">
+  3007→              {(!selectedPatient.invoices || selectedPatient.invoices.length === 0) ? (
+  3008→                <div className="text-center py-8 text-muted-foreground text-sm">Aucune facture</div>
+  3009→              ) : (
+  3010→                <Table>
+  3011→                  <TableHeader>
+  3012→                    <TableRow>
+  3013→                      <TableHead className="text-xs">N° Facture</TableHead>
+  3014→                      <TableHead className="text-xs">Montant</TableHead>
+  3015→                      <TableHead className="text-xs">Payé</TableHead>
+  3016→                      <TableHead className="text-xs">Statut</TableHead>
+  3017→                      <TableHead className="text-xs">Date</TableHead>
+  3018→                    </TableRow>
+  3019→                  </TableHeader>
+  3020→                  <TableBody>
+  3021→                    {selectedPatient.invoices.map((inv: any) => {
+  3022→                      const st = STATUS_INVOICE[inv.status] || STATUS_INVOICE.impayee
+  3023→                      return (
+  3024→                        <TableRow key={inv.id}>
+  3025→                          <TableCell className="text-xs font-mono">{inv.invoiceNumber}</TableCell>
+  3026→                          <TableCell className="text-xs font-medium">{fmtCurrency(inv.totalAmount)}</TableCell>
+  3027→                          <TableCell className="text-xs">{fmtCurrency(inv.paidAmount)}</TableCell>
+  3028→                          <TableCell className="text-xs">
+  3029→                            <Badge variant="outline" className={st.className}>{st.label}</Badge>
+  3030→                          </TableCell>
+  3031→                          <TableCell className="text-xs">{fmtDate(inv.createdAt)}</TableCell>
+  3032→                        </TableRow>
+  3033→                      )
+  3034→                    })}
+  3035→                  </TableBody>
+  3036→                </Table>
+  3037→              )}
+  3038→            </CardContent>
+  3039→          </Card>
+  3040→
+  3041→          {/* Vital Signs History */}
+  3042→          <Card>
+  3043→            <CardHeader className="pb-3">
+  3044→              <CardTitle className="text-base flex items-center gap-2">
+  3045→                <Activity className="w-4 h-4 text-emerald-600" />
+  3046→                Constantes Vitales ({selectedPatient.vitals?.length || 0})
+  3047→              </CardTitle>
+  3048→            </CardHeader>
+  3049→            <CardContent className="p-0">
+  3050→              {(!selectedPatient.vitals || selectedPatient.vitals.length === 0) ? (
+  3051→                <div className="text-center py-8 text-muted-foreground text-sm">Aucune mesure enregistrée</div>
+  3052→              ) : (
+  3053→                <div className="max-h-96 overflow-y-auto">
+  3054→                  <Table>
+  3055→                    <TableHeader>
+  3056→                      <TableRow>
+  3057→                        <TableHead className="text-xs">Date</TableHead>
+  3058→                        <TableHead className="text-xs">Poids</TableHead>
+  3059→                        <TableHead className="text-xs">Taille</TableHead>
+  3060→                        <TableHead className="text-xs">Température</TableHead>
+  3061→                        <TableHead className="text-xs">TA</TableHead>
+  3062→                        <TableHead className="text-xs">FC</TableHead>
+  3063→                        <TableHead className="text-xs">SpO2</TableHead>
+  3064→                        <TableHead className="text-xs">FR</TableHead>
+  3065→                      </TableRow>
+  3066→                    </TableHeader>
+  3067→                    <TableBody>
+  3068→                      {selectedPatient.vitals.map((v: any) => (
+  3069→                        <TableRow key={v.id}>
+  3070→                          <TableCell className="text-xs">{fmtDateTime(v.createdAt)}</TableCell>
+  3071→                          <TableCell className="text-xs">{v.weight != null ? `${v.weight} kg` : '—'}</TableCell>
+  3072→                          <TableCell className="text-xs">{v.height != null ? `${v.height} cm` : '—'}</TableCell>
+  3073→                          <TableCell className="text-xs">{v.temperature != null ? `${v.temperature} °C` : '—'}</TableCell>
+  3074→                          <TableCell className="text-xs">{v.bloodPressureSystolic != null ? `${v.bloodPressureSystolic}/${v.bloodPressureDiastolic}` : '—'}</TableCell>
+  3075→                          <TableCell className="text-xs">{v.heartRate != null ? `${v.heartRate} bpm` : '—'}</TableCell>
+  3076→                          <TableCell className="text-xs">{v.oxygenSaturation != null ? `${v.oxygenSaturation}%` : '—'}</TableCell>
+  3077→                          <TableCell className="text-xs">{v.respiratoryRate != null ? `${v.respiratoryRate}/min` : '—'}</TableCell>
+  3078→                        </TableRow>
+  3079→                      ))}
+  3080→                    </TableBody>
+  3081→                  </Table>
+  3082→                </div>
+  3083→              )}
+  3084→            </CardContent>
+  3085→          </Card>
+  3086→        </div>
+  3087→      )}
+  3088→    </div>
+  3089→  )
+  3090→}
+  3091→
+  3092→/* ═══════════════════════════════════════════════════
+  3093→   LABORATOIRE VIEW
+  3094→   ═══════════════════════════════════════════════════ */
+  3095→
+  3096→function LaboView() {
+  3097→  const [labs, setLabs] = useState<any[]>([])
+  3098→  const [patients, setPatients] = useState<any[]>([])
+
+[showing lines 2529-3098 of 4458; use offset=3099 with limit to continue reading]

@@ -3,13 +3,15 @@ import { db } from '@/lib/db'
 
 const HOSPITAL_ID = process.env.HOSPITAL_ID || 'hosp_demo_001'
 
-// GET /api/appointments?date=...&status=...&patientId=...
+// GET /api/appointments?date=...&status=...&patientId=...&departmentId=...&staffId=...
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url)
     const dateStr = searchParams.get('date')
     const status = searchParams.get('status')
     const patientId = searchParams.get('patientId')
+    const departmentId = searchParams.get('departmentId')
+    const staffId = searchParams.get('staffId')
 
     const where: Record<string, unknown> = { hospitalId: HOSPITAL_ID }
 
@@ -29,11 +31,20 @@ export async function GET(req: NextRequest) {
       where.patientId = patientId
     }
 
+    if (departmentId) {
+      where.departmentId = departmentId
+    }
+
+    if (staffId) {
+      where.staffId = staffId
+    }
+
     const appointments = await db.appointment.findMany({
       where,
       include: {
         patient: { select: { id: true, firstName: true, lastName: true, phone: true, folderNumber: true } },
-        staff: { select: { id: true, firstName: true, lastName: true, specialty: true } },
+        staff: { select: { id: true, firstName: true, lastName: true, specialty: true, department: { select: { id: true, name: true } } } },
+        department: { select: { id: true, name: true } },
       },
       orderBy: { date: 'asc' },
     })

@@ -3,19 +3,35 @@ import { db } from '@/lib/db'
 
 const HOSPITAL_ID = process.env.HOSPITAL_ID || 'hosp_demo_001'
 
-// GET /api/consultations?patientId=...
+// GET /api/consultations?patientId=...&dateFrom=...&dateTo=...
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url)
     const patientId = searchParams.get('patientId')
+    const dateFrom = searchParams.get('dateFrom')
+    const dateTo = searchParams.get('dateTo')
 
-    if (!patientId) {
-      return NextResponse.json({ error: 'ID du patient requis' }, { status: 400 })
+    const where: Record<string, unknown> = { hospitalId: HOSPITAL_ID }
+
+    if (patientId) {
+      where.patientId = patientId
+    }
+
+    if (dateFrom || dateTo) {
+      const dateFilter: Record<string, unknown> = {}
+      if (dateFrom) dateFilter.gte = new Date(dateFrom)
+      if (dateTo) {
+        const end = new Date(dateTo)
+        end.setHours(23, 59, 59, 999)
+        dateFilter.lte = end
+      }
+      where.createdAt = dateFilter
     }
 
     const consultations = await db.consultation.findMany({
-      where: { hospitalId: HOSPITAL_ID, patientId },
+      where,
       include: {
+        patient: { select: { id: true, firstName: true, lastName: true, folderNumber: true } },
         staff: { select: { id: true, firstName: true, lastName: true, specialty: true } },
         department: { select: { id: true, name: true } },
         prescriptions: {

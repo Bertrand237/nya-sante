@@ -1,0 +1,2002 @@
+     1→'use client'
+     2→
+     3→import { useState, useEffect, useCallback, useRef } from 'react'
+     4→import { toast } from 'sonner'
+     5→import { useAppStore } from '@/lib/store'
+     6→import { Toaster } from '@/components/ui/sonner'
+     7→
+     8→import { Button } from '@/components/ui/button'
+     9→import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+    10→import { Input } from '@/components/ui/input'
+    11→import { Label } from '@/components/ui/label'
+    12→import { Badge } from '@/components/ui/badge'
+    13→import { Separator } from '@/components/ui/separator'
+    14→import { Skeleton } from '@/components/ui/skeleton'
+    15→import { ScrollArea } from '@/components/ui/scroll-area'
+    16→import {
+    17→  Table,
+    18→  TableBody,
+    19→  TableCell,
+    20→  TableHead,
+    21→  TableHeader,
+    22→  TableRow,
+    23→} from '@/components/ui/table'
+    24→import {
+    25→  Dialog,
+    26→  DialogContent,
+    27→  DialogHeader,
+    28→  DialogTitle,
+    29→  DialogFooter,
+    30→} from '@/components/ui/dialog'
+    31→import {
+    32→  Sheet,
+    33→  SheetContent,
+    34→  SheetTrigger,
+    35→  SheetTitle,
+    36→} from '@/components/ui/sheet'
+    37→import {
+    38→  Select,
+    39→  SelectContent,
+    40→  SelectItem,
+    41→  SelectTrigger,
+    42→  SelectValue,
+    43→} from '@/components/ui/select'
+    44→import {
+    45→  LayoutDashboard,
+    46→  Heart,
+    47→  Building2,
+    48→  Users,
+    49→  Calendar,
+    50→  Stethoscope,
+    51→  Receipt,
+    52→  Pill,
+    53→  Settings,
+    54→  LogOut,
+    55→  Menu,
+    56→  Loader2,
+    57→  Search,
+    58→  Plus,
+    59→  ChevronRight,
+    60→  Phone,
+    61→  Lock,
+    62→  UserCircle,
+    63→  TrendingUp,
+    64→  TrendingDown,
+    65→  DollarSign,
+    66→  Activity,
+    67→  AlertTriangle,
+    68→  FileText,
+    69→  Clock,
+    70→  CheckCircle2,
+    71→  XCircle,
+    72→  Eye,
+    73→  Cloud,
+    74→  Smartphone,
+    75→  Monitor,
+    76→  Globe,
+    77→  Server,
+    78→  Shield,
+    79→  Wifi,
+    80→  WifiOff,
+    81→  Download,
+    82→  Printer,
+    83→  CheckCircle2 as CheckCircle,
+    84→  ArrowRight,
+    85→  Zap,
+    86→  HardDrive,
+    87→  Package,
+    88→  FileHeart,
+    89→  Microscope,
+    90→  Thermometer,
+    91→  UserPlus,
+    92→  CreditCard,
+    93→  RefreshCw,
+    94→  Banknote,
+    95→  BarChart3,
+    96→  PieChart as PieChartIcon,
+    97→  ClipboardList,
+    98→  Wallet,
+    99→  ArrowUpDown,
+   100→  X,
+   101→  Filter,
+   102→  CalendarDays,
+   103→  PackageX,
+   104→  PackageCheck,
+   105→} from 'lucide-react'
+   106→
+   107→import {
+   108→  BarChart,
+   109→  Bar,
+   110→  AreaChart,
+   111→  Area,
+   112→  PieChart,
+   113→  Pie,
+   114→  Cell,
+   115→  XAxis,
+   116→  YAxis,
+   117→  CartesianGrid,
+   118→  Tooltip,
+   119→  Legend,
+   120→  ResponsiveContainer,
+   121→} from 'recharts'
+   122→
+   123→/* ═══════════════════════════════════════════════════
+   124→   HELPERS
+   125→   ═══════════════════════════════════════════════════ */
+   126→
+   127→const fmtCurrency = (amount: number) =>
+   128→  new Intl.NumberFormat('fr-FR').format(amount) + ' FCFA'
+   129→
+   130→const fmtDate = (date: string | Date) =>
+   131→  new Date(date).toLocaleDateString('fr-FR', {
+   132→    day: '2-digit',
+   133→    month: 'short',
+   134→    year: 'numeric',
+   135→  })
+   136→
+   137→const fmtDateTime = (date: string | Date) =>
+   138→  new Date(date).toLocaleDateString('fr-FR', {
+   139→    day: '2-digit',
+   140→    month: 'short',
+   141→    year: 'numeric',
+   142→    hour: '2-digit',
+   143→    minute: '2-digit',
+   144→  })
+   145→
+   146→const fmtTime = (date: string | Date) =>
+   147→  new Date(date).toLocaleTimeString('fr-FR', {
+   148→    hour: '2-digit',
+   149→    minute: '2-digit',
+   150→  })
+   151→
+   152→const STATUS_APPOINTMENT: Record<string, { label: string; className: string }> = {
+   153→  en_attente: { label: 'En attente', className: 'bg-yellow-100 text-yellow-800 border-yellow-300' },
+   154→  confirme: { label: 'Confirmé', className: 'bg-blue-100 text-blue-800 border-blue-300' },
+   155→  en_cours: { label: 'En cours', className: 'bg-orange-100 text-orange-800 border-orange-300' },
+   156→  termine: { label: 'Terminé', className: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
+   157→  annule: { label: 'Annulé', className: 'bg-red-100 text-red-800 border-red-300' },
+   158→}
+   159→
+   160→const STATUS_LAB: Record<string, { label: string; className: string }> = {
+   161→  en_attente: { label: 'En attente', className: 'bg-yellow-100 text-yellow-800 border-yellow-300' },
+   162→  en_cours: { label: 'En cours', className: 'bg-blue-100 text-blue-800 border-blue-300' },
+   163→  termine: { label: 'Terminé', className: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
+   164→}
+   165→
+   166→const LAB_TYPES = ['Hémogramme', 'Biochimie', 'Urine', 'Parasitologie', 'Sérologie', 'Bactériologie', 'Autre']
+   167→
+   168→const STATUS_INVOICE: Record<string, { label: string; className: string }> = {
+   169→  impayee: { label: 'Impayée', className: 'bg-red-100 text-red-800 border-red-300' },
+   170→  partiellement_payee: { label: 'Partielle', className: 'bg-yellow-100 text-yellow-800 border-yellow-300' },
+   171→  payee: { label: 'Payée', className: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
+   172→}
+   173→
+   174→const STATUS_PRESCRIPTION: Record<string, { label: string; className: string }> = {
+   175→  active: { label: 'Active', className: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
+   176→  completed: { label: 'Terminée', className: 'bg-gray-100 text-gray-700 border-gray-300' },
+   177→}
+   178→
+   179→const BLOOD_TYPES = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']
+   180→const DEPT_TYPES = ['clinique', 'chirurgical', 'laboratoire', 'imagerie', 'pharmacie', 'administration', 'urgence', 'maternite', 'pediatrie', 'autre']
+   181→
+   182→const NAV_ITEMS = [
+   183→  { key: 'dashboard', label: 'Tableau de bord', icon: LayoutDashboard },
+   184→  { key: 'patients', label: 'Patients', icon: Heart },
+   185→  { key: 'dme', label: 'DME', icon: FileHeart },
+   186→  { key: 'departments', label: 'Départements', icon: Building2 },
+   187→  { key: 'staff', label: 'Personnel', icon: Users },
+   188→  { key: 'appointments', label: 'Rendez-vous', icon: Calendar },
+   189→  { key: 'consultations', label: 'Consultations', icon: Stethoscope },
+   190→  { key: 'prescriptions', label: 'Ordonnances', icon: FileText },
+   191→  { key: 'invoices', label: 'Facturation', icon: Receipt },
+   192→  { key: 'medications', label: 'Pharmacie', icon: Pill },
+   193→  { key: 'labs', label: 'Laboratoire', icon: Microscope },
+   194→  { key: 'audit', label: "Journal d'audit", icon: Shield },
+   195→  { key: 'settings', label: 'Paramètres', icon: Settings },
+   196→  { key: 'platforms', label: 'Plateformes', icon: Cloud },
+   197→]
+   198→
+   199→/* ═══════════════════════════════════════════════════
+   200→   LOGIN SCREEN
+   201→   ═══════════════════════════════════════════════════ */
+   202→
+   203→function LoginScreen() {
+   204→  const [phone, setPhone] = useState('655443322')
+   205→  const [pin, setPin] = useState('123456')
+   206→  const [loading, setLoading] = useState(false)
+   207→  const { setUser, setCurrentView } = useAppStore()
+   208→
+   209→  const handleLogin = async (e: React.FormEvent) => {
+   210→    e.preventDefault()
+   211→    setLoading(true)
+   212→    try {
+   213→      const res = await fetch('/api/auth', {
+   214→        method: 'POST',
+   215→        headers: { 'Content-Type': 'application/json' },
+   216→        body: JSON.stringify({ phone, pin }),
+   217→      })
+   218→      if (!res.ok) {
+   219→        const data = await res.json()
+   220→        toast.error(data.error || 'Identifiants incorrects')
+   221→        return
+   222→      }
+   223→      const user = await res.json()
+   224→      setUser(user)
+   225→      setCurrentView('dashboard')
+   226→      toast.success(`Bienvenue, Dr. ${user.lastName} !`)
+   227→    } catch {
+   228→      toast.error('Erreur de connexion au serveur')
+   229→    } finally {
+   230→      setLoading(false)
+   231→    }
+   232→  }
+   233→
+   234→  return (
+   235→    <div className="min-h-screen nya-gradient nya-pattern flex items-center justify-center p-4">
+   236→      <Card className="w-full max-w-md shadow-2xl border-0 py-8">
+   237→        <CardHeader className="items-center gap-4 pb-2">
+   238→          <div className="w-20 h-20 rounded-2xl bg-emerald-50 flex items-center justify-center overflow-hidden border-2 border-emerald-100">
+   239→            <img src="/nya-logo.png" alt="NYA Santé" className="w-16 h-16 object-contain" />
+   240→          </div>
+   241→          <div className="text-center">
+   242→            <CardTitle className="text-xl font-bold text-emerald-900">
+   243→              Clinique Centrale NYA
+   244→            </CardTitle>
+   245→            <p className="text-sm text-muted-foreground mt-1">
+   246→              Système de Gestion Hospitalière
+   247→            </p>
+   248→          </div>
+   249→        </CardHeader>
+   250→        <CardContent>
+   251→          <form onSubmit={handleLogin} className="space-y-5">
+   252→            <div className="space-y-2">
+   253→              <Label htmlFor="phone" className="text-sm font-medium">
+   254→                <Phone className="inline w-4 h-4 mr-1 -mt-0.5" />
+   255→                Téléphone
+   256→              </Label>
+   257→              <Input
+   258→                id="phone"
+   259→                type="tel"
+   260→                value={phone}
+   261→                onChange={(e) => setPhone(e.target.value)}
+   262→                placeholder="6XXXXXXXX"
+   263→                className="h-11"
+   264→              />
+   265→            </div>
+   266→            <div className="space-y-2">
+   267→              <Label htmlFor="pin" className="text-sm font-medium">
+   268→                <Lock className="inline w-4 h-4 mr-1 -mt-0.5" />
+   269→                Code PIN
+   270→              </Label>
+   271→              <Input
+   272→                id="pin"
+   273→                type="password"
+   274→                value={pin}
+   275→                onChange={(e) => setPin(e.target.value)}
+   276→                placeholder="••••••"
+   277→                className="h-11"
+   278→              />
+   279→            </div>
+   280→            <Button
+   281→              type="submit"
+   282→              className="w-full h-11 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold"
+   283→              disabled={loading}
+   284→            >
+   285→              {loading ? (
+   286→                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+   287→              ) : (
+   288→                <Lock className="w-4 h-4 mr-2" />
+   289→              )}
+   290→              Se connecter
+   291→            </Button>
+   292→          </form>
+   293→          <p className="text-xs text-center text-muted-foreground mt-6">
+   294→            Compte démo : 655443322 / 123456 (Dr. Amina Nya)
+   295→          </p>
+   296→        </CardContent>
+   297→      </Card>
+   298→    </div>
+   299→  )
+   300→}
+   301→
+   302→/* ═══════════════════════════════════════════════════
+   303→   SIDEBAR
+   304→   ═══════════════════════════════════════════════════ */
+   305→
+   306→function SidebarContent({ onClose }: { onClose?: () => void }) {
+   307→  const { currentView, setCurrentView, user, setUser } = useAppStore()
+   308→  const [badges, setBadges] = useState({ appointments: 0, invoices: 0, labs: 0 })
+   309→  const mountedRef = useRef(true)
+   310→
+   311→  // Fetch notification badge counts
+   312→  useEffect(() => {
+   313→    mountedRef.current = true
+   314→    const fetchBadges = async () => {
+   315→      try {
+   316→        const today = new Date().toISOString().split('T')[0]
+   317→        const [aptsRes, invRes, labsRes] = await Promise.all([
+   318→          fetch(`/api/appointments?status=en_attente&date=${today}`),
+   319→          fetch('/api/invoices?status=impayee'),
+   320→          fetch('/api/labs?status=en_attente'),
+   321→        ])
+   322→        if (!mountedRef.current) return
+   323→        const apts = await aptsRes.json()
+   324→        const invs = await invRes.json()
+   325→        const labList = await labsRes.json()
+   326→        setBadges({
+   327→          appointments: Array.isArray(apts) ? apts.length : 0,
+   328→          invoices: Array.isArray(invs) ? invs.length : 0,
+   329→          labs: Array.isArray(labList) ? labList.length : 0,
+   330→        })
+   331→      } catch {
+   332→        // Silently fail — badges are non-critical
+   333→      }
+   334→    }
+   335→    fetchBadges()
+   336→    // Refresh every 60 seconds
+   337→    const interval = setInterval(fetchBadges, 60000)
+   338→    return () => { mountedRef.current = false; clearInterval(interval) }
+   339→  }, [])
+   340→
+   341→  const handleNav = (key: string) => {
+   342→    setCurrentView(key)
+   343→    onClose?.()
+   344→  }
+   345→
+   346→  const handleLogout = () => {
+   347→    setUser(null)
+   348→    setCurrentView('dashboard')
+   349→    toast.success('Déconnexion réussie')
+   350→  }
+   351→
+   352→  const getBadge = (key: string) => {
+   353→    if (key === 'appointments' && badges.appointments > 0) {
+   354→      return (
+   355→        <span className="ml-auto flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold leading-none">
+   356→          {badges.appointments > 99 ? '99+' : badges.appointments}
+   357→        </span>
+   358→      )
+   359→    }
+   360→    if (key === 'invoices' && badges.invoices > 0) {
+   361→      return (
+   362→        <span className="ml-auto flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-amber-500 text-white text-[10px] font-bold leading-none">
+   363→          {badges.invoices > 99 ? '99+' : badges.invoices}
+   364→        </span>
+   365→      )
+   366→    }
+   367→    if (key === 'labs' && badges.labs > 0) {
+   368→      return (
+   369→        <span className="ml-auto flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-blue-500 text-white text-[10px] font-bold leading-none">
+   370→          {badges.labs > 99 ? '99+' : badges.labs}
+   371→        </span>
+   372→      )
+   373→    }
+   374→    return null
+   375→  }
+   376→
+   377→  return (
+   378→    <div className="flex flex-col h-full bg-emerald-900 text-white overflow-hidden">
+   379→      {/* Logo */}
+   380→      <div className="p-5 flex items-center gap-3 border-b border-emerald-800">
+   381→        <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center overflow-hidden">
+   382→          <img src="/nya-logo.png" alt="NYA" className="w-8 h-8 object-contain" />
+   383→        </div>
+   384→        <div className="flex-1 min-w-0">
+   385→          <p className="font-bold text-sm leading-tight truncate">Clinique Centrale NYA</p>
+   386→          <p className="text-emerald-300 text-xs">Système de Gestion</p>
+   387→        </div>
+   388→      </div>
+   389→
+   390→      {/* Navigation */}
+   391→      <ScrollArea className="flex-1 py-2 px-3">
+   392→        <nav className="space-y-px">
+   393→          {NAV_ITEMS.map((item) => {
+   394→            const Icon = item.icon
+   395→            const isActive = currentView === item.key
+   396→            const badge = getBadge(item.key)
+   397→            return (
+   398→              <div key={item.key}>
+   399→                {(item.key === 'settings' || item.key === 'platforms') && (
+   400→                  <div className="my-2 border-t border-emerald-700/50" />
+   401→                )}
+   402→                <button
+   403→                  onClick={() => handleNav(item.key)}
+   404→                  className={`w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-[13px] font-medium transition-all duration-150 ${
+   405→                    isActive
+   406→                      ? 'bg-emerald-700/60 text-white shadow-sm'
+   407→                      : 'text-emerald-200 hover:bg-emerald-800/60 hover:text-white'
+   408→                  }`}
+   409→                >
+   410→                  <Icon className="w-4 h-4 shrink-0" />
+   411→                  <span className="truncate">{item.label}</span>
+   412→                  {badge || (isActive && <ChevronRight className="w-3.5 h-3.5 ml-auto opacity-60" />)}
+   413→                </button>
+   414→              </div>
+   415→            )
+   416→          })}
+   417→        </nav>
+   418→      </ScrollArea>
+   419→
+   420→      {/* User info — stays at bottom */}
+   421→      <div className="mt-auto border-t border-emerald-800 px-3 py-3">
+   422→        <div className="flex items-center gap-2.5 mb-2">
+   423→          <div className="w-8 h-8 rounded-full bg-emerald-700 flex items-center justify-center shrink-0">
+   424→            <UserCircle className="w-4.5 h-4.5 text-emerald-200" />
+   425→          </div>
+   426→          <div className="flex-1 min-w-0">
+   427→            <p className="text-xs font-medium truncate">
+   428→              {user?.firstName} {user?.lastName}
+   429→            </p>
+   430→            <p className="text-[11px] text-emerald-400 truncate">
+   431→              {user?.role?.label || user?.role?.name}
+   432→            </p>
+   433→          </div>
+   434→        </div>
+   435→        <Button
+   436→          variant="ghost"
+   437→          size="sm"
+   438→          onClick={handleLogout}
+   439→          className="w-full justify-start text-emerald-300 hover:text-white hover:bg-emerald-800 h-8 text-xs"
+   440→        >
+   441→          <LogOut className="w-3.5 h-3.5 mr-2" />
+   442→          Déconnexion
+   443→        </Button>
+   444→      </div>
+   445→    </div>
+   446→  )
+   447→}
+   448→
+   449→/* ═══════════════════════════════════════════════════
+   450→   LOADING SKELETON
+   451→   ═══════════════════════════════════════════════════ */
+   452→
+   453→function TableSkeleton({ rows = 5, cols = 5 }: { rows?: number; cols?: number }) {
+   454→  return (
+   455→    <div className="space-y-3 p-4">
+   456→      {Array.from({ length: rows }).map((_, r) => (
+   457→        <div key={r} className="flex gap-4">
+   458→          {Array.from({ length: cols }).map((_, c) => (
+   459→            <Skeleton key={c} className="h-8 flex-1" />
+   460→          ))}
+   461→        </div>
+   462→      ))}
+   463→    </div>
+   464→  )
+   465→}
+   466→
+   467→function CardSkeleton() {
+   468→  return (
+   469→    <Card className="p-6">
+   470→      <div className="flex items-center justify-between mb-3">
+   471→        <Skeleton className="h-4 w-24" />
+   472→        <Skeleton className="h-8 w-8 rounded-lg" />
+   473→      </div>
+   474→      <Skeleton className="h-8 w-16 mb-2" />
+   475→      <Skeleton className="h-3 w-32" />
+   476→    </Card>
+   477→  )
+   478→}
+   479→
+   480→/* ═══════════════════════════════════════════════════
+   481→   DASHBOARD VIEW
+   482→   ═══════════════════════════════════════════════════ */
+   483→
+   484→// Color palette for charts — emerald/teal healthcare theme
+   485→const CHART_COLORS = ['#047857', '#0d9488', '#14b8a6', '#2dd4bf', '#5eead4', '#99f6e4', '#ccfbf1']
+   486→const STACK_COLORS: Record<string, string> = {
+   487→  en_attente: '#eab308',
+   488→  confirme: '#0ea5e9',
+   489→  en_cours: '#f97316',
+   490→  termine: '#047857',
+   491→  annule: '#ef4444',
+   492→}
+   493→const STACK_LABELS: Record<string, string> = {
+   494→  en_attente: 'En attente',
+   495→  confirme: 'Confirmé',
+   496→  en_cours: 'En cours',
+   497→  termine: 'Terminé',
+   498→  annule: 'Annulé',
+   499→}
+   500→
+   501→// Custom tooltip for FCFA amounts
+   502→function RevenueTooltip({ active, payload, label }: any) {
+   503→  if (!active || !payload?.length) return null
+   504→  return (
+   505→    <div className="bg-popover border border-border rounded-lg px-3 py-2 shadow-md text-xs">
+   506→      <p className="font-semibold mb-1">{label}</p>
+   507→      {payload.map((entry: any, i: number) => (
+   508→        <p key={i} style={{ color: entry.color }}>
+   509→          {entry.name}: {fmtCurrency(entry.value)}
+   510→        </p>
+   511→      ))}
+   512→    </div>
+   513→  )
+   514→}
+   515→
+   516→// Custom tooltip for count-based charts
+   517→function CountTooltip({ active, payload, label }: any) {
+   518→  if (!active || !payload?.length) return null
+   519→  return (
+   520→    <div className="bg-popover border border-border rounded-lg px-3 py-2 shadow-md text-xs">
+   521→      <p className="font-semibold mb-1">{label}</p>
+   522→      {payload.map((entry: any, i: number) => (
+   523→        <p key={i} style={{ color: entry.color }}>
+   524→          {entry.name}: {entry.value}
+   525→        </p>
+   526→      ))}
+   527→    </div>
+   528→  )
+   529→}
+   530→
+   531→// Custom pie/department tooltip
+   532→function PieTooltip({ active, payload }: any) {
+   533→  if (!active || !payload?.length) return null
+   534→  const d = payload[0]
+   535→  return (
+   536→    <div className="bg-popover border border-border rounded-lg px-3 py-2 shadow-md text-xs">
+   537→      <p className="font-semibold">{d.name}</p>
+   538→      <p style={{ color: d.payload.fill }}>{d.value} rendez-vous</p>
+   539→    </div>
+   540→  )
+   541→}
+   542→
+   543→// Custom pie label
+   544→const renderPieLabel = ({ name, percent }: any) =>
+   545→  `${name} (${(percent * 100).toFixed(0)}%)`
+   546→
+   547→function DashboardView() {
+   548→  const { setCurrentView } = useAppStore()
+   549→  const [loading, setLoading] = useState(true)
+   550→  const [stats, setStats] = useState<Record<string, number> | null>(null)
+   551→  const [trends, setTrends] = useState<any>(null)
+   552→  const [recentPatients, setRecentPatients] = useState<any[]>([])
+   553→  const [todayAppts, setTodayAppts] = useState<any[]>([])
+   554→  const [weeklyAppointments, setWeeklyAppointments] = useState<any[]>([])
+   555→  const [monthlyRevenue, setMonthlyRevenue] = useState<any[]>([])
+   556→  const [departmentLoad, setDepartmentLoad] = useState<any[]>([])
+   557→  const [topMedications, setTopMedications] = useState<any[]>([])
+   558→
+   559→  useEffect(() => {
+   560→    const load = async () => {
+   561→      try {
+   562→        const res = await fetch('/api/dashboard')
+   563→        const data = await res.json()
+   564→        setStats(data.stats)
+   565→        setTrends(data.trends || null)
+   566→        setRecentPatients(data.recentPatients || [])
+   567→        setTodayAppts(data.todayAppointments || [])
+   568→        setWeeklyAppointments(data.weeklyAppointments || [])
+   569→        setMonthlyRevenue(data.monthlyRevenue || [])
+   570→        setDepartmentLoad(data.departmentLoad || [])
+   571→        setTopMedications(data.topMedications || [])
+   572→      } catch {
+   573→        toast.error('Erreur de chargement du tableau de bord')
+   574→      } finally {
+   575→        setLoading(false)
+   576→      }
+   577→    }
+   578→    load()
+   579→  }, [])
+   580→
+   581→  // KPI cards with trend indicators
+   582→  const kpiCards = [
+   583→    {
+   584→      label: 'Total Patients',
+   585→      value: stats?.totalPatients ?? 0,
+   586→      icon: Heart,
+   587→      bg: 'bg-emerald-50',
+   588→      iconBg: 'bg-emerald-100',
+   589→      iconColor: 'text-emerald-700',
+   590→      trend: trends?.newPatients,
+   591→      trendLabel: 'cette semaine',
+   592→    },
+   593→    {
+   594→      label: "RDV Aujourd'hui",
+   595→      value: stats?.todayAppointments ?? 0,
+   596→      icon: Calendar,
+   597→      bg: 'bg-blue-50',
+   598→      iconBg: 'bg-blue-100',
+   599→      iconColor: 'text-blue-700',
+   600→      trend: trends?.appointments,
+   601→      trendLabel: 'vs semaine dernière',
+   602→    },
+   603→    {
+   604→      label: 'Factures en attente',
+   605→      value: stats?.pendingInvoices ?? 0,
+   606→      icon: CreditCard,
+   607→      bg: 'bg-orange-50',
+   608→      iconBg: 'bg-orange-100',
+   609→      iconColor: 'text-orange-700',
+   610→    },
+   611→    {
+   612→      label: 'Revenus Totaux',
+   613→      value: stats?.totalRevenue ?? 0,
+   614→      icon: DollarSign,
+   615→      bg: 'bg-teal-50',
+   616→      iconBg: 'bg-teal-100',
+   617→      iconColor: 'text-teal-700',
+   618→      isCurrency: true,
+   619→      trend: trends?.revenue,
+   620→      trendLabel: 'cette semaine',
+   621→    },
+   622→  ]
+   623→
+   624→  return (
+   625→    <div className="space-y-6 animate-fade-in-up">
+   626→      <div>
+   627→        <h1 className="text-2xl font-bold">Tableau de bord</h1>
+   628→        <p className="text-muted-foreground text-sm mt-1">Vue d&apos;ensemble de votre activité</p>
+   629→      </div>
+   630→
+   631→      {/* KPI Cards */}
+   632→      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+   633→        {loading
+   634→          ? Array.from({ length: 4 }).map((_, i) => <CardSkeleton key={i} />)
+   635→          : kpiCards.map((kpi) => {
+   636→              const Icon = kpi.icon
+   637→              const trendVal = kpi.trend?.change
+   638→              return (
+   639→                <Card key={kpi.label} className="p-5 card-hover rounded-xl shadow-sm">
+   640→                  <CardContent className="p-0">
+   641→                    <div className="flex items-center justify-between mb-3">
+   642→                      <span className="text-sm text-muted-foreground font-medium">{kpi.label}</span>
+   643→                      <div className={`w-9 h-9 rounded-lg ${kpi.iconBg} flex items-center justify-center`}>
+   644→                        <Icon className={`w-4.5 h-4.5 ${kpi.iconColor}`} />
+   645→                      </div>
+   646→                    </div>
+   647→                    <p className="text-2xl font-bold">
+   648→                      {kpi.isCurrency ? fmtCurrency(kpi.value) : kpi.value.toLocaleString('fr-FR')}
+   649→                    </p>
+   650→                    <div className="flex items-center gap-1.5 mt-1.5">
+   651→                      {kpi.trend ? (
+   652→                        <>
+   653→                          {trendVal !== undefined && trendVal !== 0 && (
+   654→                            <span
+   655→                              className={`inline-flex items-center gap-0.5 text-xs font-semibold px-1.5 py-0.5 rounded-full ${
+   656→                                trendVal > 0
+   657→                                  ? 'bg-emerald-100 text-emerald-700'
+   658→                                  : 'bg-red-100 text-red-700'
+   659→                              }`}
+   660→                            >
+   661→                              {trendVal > 0 ? (
+   662→                                <TrendingUp className="w-3 h-3" />
+   663→                              ) : (
+   664→                                <TrendingDown className="w-3 h-3" />
+   665→                              )}
+   666→                              {Math.abs(trendVal).toFixed(0)}%
+   667→                            </span>
+   668→                          )}
+   669→                          <span className="text-xs text-muted-foreground">
+   670→                            {trendVal !== undefined && trendVal !== 0
+   671→                              ? `${kpi.trend.current} ${kpi.trendLabel}`
+   672→                              : `Aucune donnée précédente`}
+   673→                          </span>
+   674→                        </>
+   675→                      ) : (
+   676→                        <p className="text-xs text-muted-foreground">
+   677→                          {kpi.isCurrency ? 'Chiffre d\'affaires cumulé' : `${stats?.totalDepartments ?? 0} départements actifs`}
+   678→                        </p>
+   679→                      )}
+   680→                    </div>
+   681→                  </CardContent>
+   682→                </Card>
+   683→              )
+   684→            })}
+   685→      </div>
+   686→
+   687→      {/* Quick Actions */}
+   688→      <div>
+   689→        <h2 className="text-sm font-semibold text-muted-foreground mb-3">Actions rapides</h2>
+   690→        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+   691→          {[
+   692→            {
+   693→              label: 'Nouveau Patient',
+   694→              icon: UserPlus,
+   695→              color: 'text-emerald-600 bg-emerald-50 hover:bg-emerald-100 border-emerald-200',
+   696→              view: 'patients',
+   697→            },
+   698→            {
+   699→              label: 'Nouveau Rendez-vous',
+   700→              icon: Calendar,
+   701→              color: 'text-blue-600 bg-blue-50 hover:bg-blue-100 border-blue-200',
+   702→              view: 'appointments',
+   703→            },
+   704→            {
+   705→              label: 'Enregistrer un Paiement',
+   706→              icon: Wallet,
+   707→              color: 'text-amber-600 bg-amber-50 hover:bg-amber-100 border-amber-200',
+   708→              view: 'invoices',
+   709→            },
+   710→            {
+   711→              label: 'Nouvelle Consultation',
+   712→              icon: ClipboardList,
+   713→              color: 'text-teal-600 bg-teal-50 hover:bg-teal-100 border-teal-200',
+   714→              view: 'consultations',
+   715→            },
+   716→          ].map((action) => {
+   717→            const ActionIcon = action.icon
+   718→            return (
+   719→              <Card
+   720→                key={action.label}
+   721→                className={`cursor-pointer transition-all duration-200 hover:shadow-md border ${action.color} rounded-xl shadow-sm p-4 group`}
+   722→                onClick={() => setCurrentView(action.view)}
+   723→              >
+   724→                <CardContent className="p-0 flex flex-col items-center gap-2.5 text-center">
+   725→                  <div className="w-10 h-10 rounded-xl bg-white/80 flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
+   726→                    <ActionIcon className="w-5 h-5" />
+   727→                  </div>
+   728→                  <span className="text-xs font-semibold leading-tight">{action.label}</span>
+   729→                </CardContent>
+   730→              </Card>
+   731→            )
+   732→          })}
+   733→        </div>
+   734→      </div>
+   735→
+   736→      {/* Charts Row 1: Weekly Appointments + Monthly Revenue */}
+   737→      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+   738→        {/* Weekly Appointments Stacked Bar Chart */}
+   739→        <Card className="rounded-xl shadow-sm">
+   740→          <CardHeader className="pb-2">
+   741→            <CardTitle className="text-base font-semibold flex items-center gap-2">
+   742→              <Calendar className="w-4 h-4 text-emerald-600" />
+   743→              Rendez-vous de la semaine
+   744→            </CardTitle>
+   745→          </CardHeader>
+   746→          <CardContent className="pt-2">
+   747→            {loading ? (
+   748→              <Skeleton className="h-[280px] w-full" />
+   749→            ) : weeklyAppointments.length === 0 ? (
+   750→              <div className="flex flex-col items-center justify-center h-[280px] text-muted-foreground text-sm">
+   751→                <BarChart3 className="w-8 h-8 mb-2 opacity-40" />
+   752→                Aucune donnée de rendez-vous
+   753→              </div>
+   754→            ) : (
+   755→              <ResponsiveContainer width="100%" height={280}>
+   756→                <BarChart data={weeklyAppointments} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
+   757→                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+   758→                  <XAxis dataKey="label" tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
+   759→                  <YAxis allowDecimals={false} tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
+   760→                  <Tooltip content={<CountTooltip />} />
+   761→                  <Legend
+   762→                    iconType="circle"
+   763→                    iconSize={8}
+   764→                    wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }}
+   765→                    formatter={(value: string) => STACK_LABELS[value] || value}
+   766→                  />
+   767→                  {Object.entries(STACK_COLORS).map(([key, color]) => (
+   768→                    <Bar key={key} dataKey={key} stackId="a" fill={color} radius={[0, 0, 0, 0]} maxBarSize={40} />
+   769→                  ))}
+   770→                </BarChart>
+   771→              </ResponsiveContainer>
+   772→            )}
+   773→          </CardContent>
+   774→        </Card>
+   775→
+   776→        {/* Monthly Revenue Area Chart */}
+   777→        <Card className="rounded-xl shadow-sm">
+   778→          <CardHeader className="pb-2">
+   779→            <CardTitle className="text-base font-semibold flex items-center gap-2">
+   780→              <TrendingUp className="w-4 h-4 text-emerald-600" />
+   781→              Revenus mensuels
+   782→            </CardTitle>
+   783→          </CardHeader>
+   784→          <CardContent className="pt-2">
+   785→            {loading ? (
+   786→              <Skeleton className="h-[280px] w-full" />
+   787→            ) : monthlyRevenue.every((m) => m.revenue === 0) ? (
+   788→              <div className="flex flex-col items-center justify-center h-[280px] text-muted-foreground text-sm">
+   789→                <DollarSign className="w-8 h-8 mb-2 opacity-40" />
+   790→                Aucun revenu enregistré
+   791→              </div>
+   792→            ) : (
+   793→              <ResponsiveContainer width="100%" height={280}>
+   794→                <AreaChart data={monthlyRevenue} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
+   795→                  <defs>
+   796→                    <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
+   797→                      <stop offset="5%" stopColor="#047857" stopOpacity={0.3} />
+   798→                      <stop offset="95%" stopColor="#047857" stopOpacity={0.02} />
+   799→                    </linearGradient>
+   800→                  </defs>
+   801→                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+   802→                  <XAxis dataKey="label" tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
+   803→                  <YAxis
+   804→                    tick={{ fontSize: 11 }}
+   805→                    stroke="hsl(var(--muted-foreground))"
+   806→                    tickFormatter={(v: number) => `${(v / 1000).toFixed(0)}k`}
+   807→                  />
+   808→                  <Tooltip content={<RevenueTooltip />} />
+   809→                  <Area
+   810→                    type="monotone"
+   811→                    dataKey="revenue"
+   812→                    name="Revenus"
+   813→                    stroke="#047857"
+   814→                    strokeWidth={2.5}
+   815→                    fill="url(#revenueGrad)"
+   816→                  />
+   817→                </AreaChart>
+   818→              </ResponsiveContainer>
+   819→            )}
+   820→          </CardContent>
+   821→        </Card>
+   822→      </div>
+   823→
+   824→      {/* Charts Row 2: Department Distribution + Top Medications */}
+   825→      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+   826→        {/* Department Load Donut Chart */}
+   827→        <Card className="rounded-xl shadow-sm">
+   828→          <CardHeader className="pb-2">
+   829→            <CardTitle className="text-base font-semibold flex items-center gap-2">
+   830→              <Building2 className="w-4 h-4 text-emerald-600" />
+   831→              Répartition par département
+   832→            </CardTitle>
+   833→          </CardHeader>
+   834→          <CardContent className="pt-2">
+   835→            {loading ? (
+   836→              <Skeleton className="h-[280px] w-full" />
+   837→            ) : departmentLoad.length === 0 ? (
+   838→              <div className="flex flex-col items-center justify-center h-[280px] text-muted-foreground text-sm">
+   839→                <PieChartIcon className="w-8 h-8 mb-2 opacity-40" />
+   840→                Aucune donnée départementale
+   841→              </div>
+   842→            ) : (
+   843→              <ResponsiveContainer width="100%" height={280}>
+   844→                <PieChart>
+   845→                  <Pie
+   846→                    data={departmentLoad}
+   847→                    cx="50%"
+   848→                    cy="50%"
+   849→                    innerRadius={60}
+   850→                    outerRadius={95}
+   851→                    paddingAngle={3}
+   852→                    dataKey="count"
+   853→                    nameKey="name"
+   854→                    label={renderPieLabel}
+   855→                    labelLine={true}
+   856→                  >
+   857→                    {departmentLoad.map((_entry, index) => (
+   858→                      <Cell
+   859→                        key={`cell-${index}`}
+   860→                        fill={CHART_COLORS[index % CHART_COLORS.length]}
+   861→                      />
+   862→                    ))}
+   863→                  </Pie>
+   864→                  <Tooltip content={<PieTooltip />} />
+   865→                  <Legend
+   866→                    iconType="circle"
+   867→                    iconSize={8}
+   868→                    wrapperStyle={{ fontSize: '11px' }}
+   869→                  />
+   870→                </PieChart>
+   871→              </ResponsiveContainer>
+   872→            )}
+   873→          </CardContent>
+   874→        </Card>
+   875→
+   876→        {/* Top Medications Horizontal Bar */}
+   877→        <Card className="rounded-xl shadow-sm">
+   878→          <CardHeader className="pb-2">
+   879→            <CardTitle className="text-base font-semibold flex items-center gap-2">
+   880→              <Pill className="w-4 h-4 text-emerald-600" />
+   881→              Médicaments les plus prescrits
+   882→            </CardTitle>
+   883→          </CardHeader>
+   884→          <CardContent className="pt-2">
+   885→            {loading ? (
+   886→              <Skeleton className="h-[280px] w-full" />
+   887→            ) : topMedications.length === 0 ? (
+   888→              <div className="flex flex-col items-center justify-center h-[280px] text-muted-foreground text-sm">
+   889→                <Pill className="w-8 h-8 mb-2 opacity-40" />
+   890→                Aucune ordonnance enregistrée
+   891→              </div>
+   892→            ) : (
+   893→              <ResponsiveContainer width="100%" height={280}>
+   894→                <BarChart
+   895→                  data={topMedications}
+   896→                  layout="vertical"
+   897→                  margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
+   898→                >
+   899→                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="hsl(var(--border))" />
+   900→                  <XAxis type="number" allowDecimals={false} tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
+   901→                  <YAxis
+   902→                    type="category"
+   903→                    dataKey="name"
+   904→                    tick={{ fontSize: 11 }}
+   905→                    stroke="hsl(var(--muted-foreground))"
+   906→                    width={120}
+   907→                  />
+   908→                  <Tooltip content={<CountTooltip />} />
+   909→                  <Bar dataKey="count" name="Prescriptions" fill="#0d9488" radius={[0, 6, 6, 0]} maxBarSize={24} />
+   910→                </BarChart>
+   911→              </ResponsiveContainer>
+   912→            )}
+   913→          </CardContent>
+   914→        </Card>
+   915→      </div>
+   916→
+   917→      {/* Bottom Row: Today's Appointments + Recent Patients */}
+   918→      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+   919→        {/* Today's Appointments */}
+   920→        <Card className="rounded-xl shadow-sm">
+   921→          <CardHeader className="pb-3">
+   922→            <CardTitle className="text-base font-semibold flex items-center gap-2">
+   923→              <Clock className="w-4 h-4 text-emerald-600" />
+   924→              Rendez-vous du jour
+   925→            </CardTitle>
+   926→          </CardHeader>
+   927→          <CardContent>
+   928→            {loading ? (
+   929→              <TableSkeleton rows={3} cols={3} />
+   930→            ) : todayAppts.length === 0 ? (
+   931→              <div className="text-center py-8 text-muted-foreground text-sm">
+   932→                <Calendar className="w-8 h-8 mx-auto mb-2 opacity-40" />
+   933→                Aucun rendez-vous aujourd&apos;hui
+   934→              </div>
+   935→            ) : (
+   936→              <div className="space-y-2 max-h-80 overflow-y-auto">
+   937→                {todayAppts.map((appt: any) => {
+   938→                  const st = STATUS_APPOINTMENT[appt.status] || STATUS_APPOINTMENT.en_attente
+   939→                  return (
+   940→                    <div
+   941→                      key={appt.id}
+   942→                      className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+   943→                    >
+   944→                      <div className="text-center min-w-[48px]">
+   945→                        <p className="text-xs font-semibold text-emerald-700">{fmtTime(appt.date)}</p>
+   946→                      </div>
+   947→                      <div className="flex-1 min-w-0">
+   948→                        <p className="text-sm font-medium truncate">
+   949→                          {appt.patient?.firstName} {appt.patient?.lastName}
+   950→                        </p>
+   951→                        <p className="text-xs text-muted-foreground">
+   952→                          Dr. {appt.staff?.firstName} {appt.staff?.lastName}
+   953→                        </p>
+   954→                      </div>
+   955→                      <Badge variant="outline" className={st.className}>
+   956→                        {st.label}
+   957→                      </Badge>
+   958→                    </div>
+   959→                  )
+   960→                })}
+   961→              </div>
+   962→            )}
+   963→          </CardContent>
+   964→        </Card>
+   965→
+   966→        {/* Recent Patients */}
+   967→        <Card className="rounded-xl shadow-sm">
+   968→          <CardHeader className="pb-3">
+   969→            <CardTitle className="text-base font-semibold flex items-center gap-2">
+   970→              <Activity className="w-4 h-4 text-emerald-600" />
+   971→              Patients récents
+   972→            </CardTitle>
+   973→          </CardHeader>
+   974→          <CardContent>
+   975→            {loading ? (
+   976→              <TableSkeleton rows={5} cols={4} />
+   977→            ) : (
+   978→              <Table>
+   979→                <TableHeader>
+   980→                  <TableRow>
+   981→                    <TableHead className="text-xs">Dossier</TableHead>
+   982→                    <TableHead className="text-xs">Nom</TableHead>
+   983→                    <TableHead className="text-xs">Téléphone</TableHead>
+   984→                    <TableHead className="text-xs">Créé le</TableHead>
+   985→                  </TableRow>
+   986→                </TableHeader>
+   987→                <TableBody>
+   988→                  {recentPatients.map((p: any) => (
+   989→                    <TableRow key={p.id}>
+   990→                      <TableCell className="text-xs font-mono">{p.folderNumber}</TableCell>
+   991→                      <TableCell className="text-xs font-medium">
+   992→                        {p.firstName} {p.lastName}
+   993→                      </TableCell>
+   994→                      <TableCell className="text-xs">{p.phone}</TableCell>
+   995→                      <TableCell className="text-xs">{fmtDate(p.createdAt)}</TableCell>
+   996→                    </TableRow>
+   997→                  ))}
+   998→                  {recentPatients.length === 0 && (
+   999→                    <TableRow>
+  1000→                      <TableCell colSpan={4} className="text-center text-muted-foreground text-sm py-8">
+  1001→                        Aucun patient enregistré
+  1002→                      </TableCell>
+  1003→                    </TableRow>
+  1004→                  )}
+  1005→                </TableBody>
+  1006→              </Table>
+  1007→            )}
+  1008→          </CardContent>
+  1009→        </Card>
+  1010→      </div>
+  1011→    </div>
+  1012→  )
+  1013→}
+  1014→
+  1015→/* ═══════════════════════════════════════════════════
+  1016→   PATIENTS VIEW
+  1017→   ═══════════════════════════════════════════════════ */
+  1018→
+  1019→function PatientsView() {
+  1020→  const [patients, setPatients] = useState<any[]>([])
+  1021→  const [totalCount, setTotalCount] = useState(0)
+  1022→  const [loading, setLoading] = useState(true)
+  1023→  const [search, setSearch] = useState('')
+  1024→  const [genderFilter, setGenderFilter] = useState('')
+  1025→  const [bloodFilter, setBloodFilter] = useState('')
+  1026→  const [statusFilter, setStatusFilter] = useState('')
+  1027→  const [sortBy, setSortBy] = useState('createdAt')
+  1028→  const [sortDir, setSortDir] = useState('desc')
+  1029→  const [dialogOpen, setDialogOpen] = useState(false)
+  1030→  const [saving, setSaving] = useState(false)
+  1031→
+  1032→  // Form state
+  1033→  const [form, setForm] = useState({
+  1034→    firstName: '', lastName: '', phone: '', email: '', dateOfBirth: '',
+  1035→    gender: 'M', bloodType: '', address: '', city: '', allergies: '',
+  1036→    emergencyContact: '', emergencyPhone: '', insuranceProvider: '', insuranceNumber: '',
+  1037→  })
+  1038→
+  1039→  const loadPatients = useCallback(async () => {
+  1040→    setLoading(true)
+  1041→    try {
+  1042→      const params = new URLSearchParams()
+  1043→      if (search) params.set('q', search)
+  1044→      if (genderFilter) params.set('gender', genderFilter)
+  1045→      if (bloodFilter) params.set('bloodType', bloodFilter)
+  1046→      if (statusFilter) params.set('status', statusFilter)
+  1047→      params.set('sortBy', sortBy)
+  1048→      params.set('sortDir', sortDir)
+  1049→      params.set('limit', '100')
+  1050→      const res = await fetch(`/api/patients?${params.toString()}`)
+  1051→      const data = await res.json()
+  1052→      setPatients(data.data || [])
+  1053→      setTotalCount(data.total || 0)
+  1054→    } catch {
+  1055→      toast.error('Erreur de chargement des patients')
+  1056→    } finally {
+  1057→      setLoading(false)
+  1058→    }
+  1059→  }, [search, genderFilter, bloodFilter, statusFilter, sortBy, sortDir])
+  1060→
+  1061→  useEffect(() => { loadPatients() }, [loadPatients])
+  1062→
+  1063→  const toggleSort = (field: string) => {
+  1064→    if (sortBy === field) {
+  1065→      setSortDir(sortDir === 'asc' ? 'desc' : 'asc')
+  1066→    } else {
+  1067→      setSortBy(field)
+  1068→      setSortDir('asc')
+  1069→    }
+  1070→  }
+  1071→
+  1072→  const hasActiveFilters = genderFilter || bloodFilter || statusFilter
+  1073→  const clearFilters = () => { setGenderFilter(''); setBloodFilter(''); setStatusFilter('') }
+  1074→  const sortLabels: Record<string, string> = { createdAt: 'Date', lastName: 'Nom', folderNumber: 'Dossier' }
+  1075→
+  1076→  const handleSave = async () => {
+  1077→    if (!form.firstName || !form.lastName || !form.phone) {
+  1078→      toast.error('Prénom, nom et téléphone sont requis')
+  1079→      return
+  1080→    }
+  1081→    setSaving(true)
+  1082→    try {
+  1083→      const res = await fetch('/api/patients', {
+  1084→        method: 'POST',
+  1085→        headers: { 'Content-Type': 'application/json' },
+  1086→        body: JSON.stringify(form),
+  1087→      })
+  1088→      if (!res.ok) {
+  1089→        const data = await res.json()
+  1090→        toast.error(data.error || 'Erreur lors de la création')
+  1091→        return
+  1092→      }
+  1093→      toast.success('Patient créé avec succès')
+  1094→      setDialogOpen(false)
+  1095→      setForm({
+  1096→        firstName: '', lastName: '', phone: '', email: '', dateOfBirth: '',
+  1097→        gender: 'M', bloodType: '', address: '', city: '', allergies: '',
+  1098→        emergencyContact: '', emergencyPhone: '', insuranceProvider: '', insuranceNumber: '',
+  1099→      })
+  1100→      loadPatients()
+  1101→    } catch {
+  1102→      toast.error('Erreur serveur')
+  1103→    } finally {
+  1104→      setSaving(false)
+  1105→    }
+  1106→  }
+  1107→
+  1108→  const updateForm = (field: string, value: string) =>
+  1109→    setForm((prev) => ({ ...prev, [field]: value }))
+  1110→
+  1111→  return (
+  1112→    <div className="space-y-6 animate-fade-in-up">
+  1113→      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+  1114→        <div>
+  1115→          <h1 className="text-2xl font-bold">Patients</h1>
+  1116→          <p className="text-muted-foreground text-sm mt-1">
+  1117→            {totalCount} patient{totalCount > 1 ? 's' : ''} trouvé{totalCount > 1 ? 's' : ''}
+  1118→          </p>
+  1119→        </div>
+  1120→        <Button
+  1121→          onClick={() => setDialogOpen(true)}
+  1122→          className="bg-emerald-700 hover:bg-emerald-800 text-white"
+  1123→        >
+  1124→          <Plus className="w-4 h-4 mr-2" />
+  1125→          Nouveau Patient
+  1126→        </Button>
+  1127→      </div>
+  1128→
+  1129→      {/* Search + Filters row */}
+  1130→      <div className="space-y-3">
+  1131→        <div className="flex flex-col sm:flex-row gap-2">
+  1132→          <div className="relative flex-1 max-w-md">
+  1133→            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+  1134→            <Input
+  1135→              placeholder="Rechercher un patient..."
+  1136→              value={search}
+  1137→              onChange={(e) => setSearch(e.target.value)}
+  1138→              className="pl-9"
+  1139→            />
+  1140→          </div>
+  1141→          <Select value={statusFilter || 'all'} onValueChange={(v) => setStatusFilter(v === 'all' ? '' : v)}>
+  1142→            <SelectTrigger className="w-[140px]"><SelectValue placeholder="Statut" /></SelectTrigger>
+  1143→            <SelectContent>
+  1144→              <SelectItem value="all">Tous</SelectItem>
+  1145→              <SelectItem value="actif">Actif</SelectItem>
+  1146→              <SelectItem value="inactif">Inactif</SelectItem>
+  1147→            </SelectContent>
+  1148→          </Select>
+  1149→          <Select value={genderFilter || 'all'} onValueChange={(v) => setGenderFilter(v === 'all' ? '' : v)}>
+  1150→            <SelectTrigger className="w-[140px]"><SelectValue placeholder="Sexe" /></SelectTrigger>
+  1151→            <SelectContent>
+  1152→              <SelectItem value="all">Tous</SelectItem>
+  1153→              <SelectItem value="M">Homme</SelectItem>
+  1154→              <SelectItem value="F">Femme</SelectItem>
+  1155→            </SelectContent>
+  1156→          </Select>
+  1157→          <Select value={bloodFilter || 'all'} onValueChange={(v) => setBloodFilter(v === 'all' ? '' : v)}>
+  1158→            <SelectTrigger className="w-[130px]"><SelectValue placeholder="Groupe" /></SelectTrigger>
+  1159→            <SelectContent>
+  1160→              <SelectItem value="all">Tous</SelectItem>
+  1161→              {BLOOD_TYPES.map((bt) => (
+  1162→                <SelectItem key={bt} value={bt}>{bt}</SelectItem>
+  1163→              ))}
+  1164→            </SelectContent>
+  1165→          </Select>
+  1166→        </div>
+  1167→        <div className="flex flex-wrap items-center gap-2">
+  1168→          <span className="text-xs text-muted-foreground">Trier :</span>
+  1169→          {['lastName', 'createdAt', 'folderNumber'].map((field) => (
+  1170→            <button
+  1171→              key={field}
+  1172→              onClick={() => toggleSort(field)}
+  1173→              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+  1174→                sortBy === field
+  1175→                  ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+  1176→                  : 'bg-muted/50 text-muted-foreground hover:bg-muted border border-transparent'
+  1177→              }`}
+  1178→            >
+  1179→              {sortLabels[field]}
+  1180→              <ArrowUpDown className={`w-3 h-3 ${sortBy === field ? 'opacity-100' : 'opacity-40'}`} />
+  1181→              {sortBy === field && (
+  1182→                <span className="text-[10px]">{sortDir === 'asc' ? '↑' : '↓'}</span>
+  1183→              )}
+  1184→            </button>
+  1185→          ))}
+  1186→          {hasActiveFilters && (
+  1187→            <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground" onClick={clearFilters}>
+  1188→              <X className="w-3 h-3 mr-1" />
+  1189→              Réinitialiser
+  1190→            </Button>
+  1191→          )}
+  1192→        </div>
+  1193→      </div>
+  1194→
+  1195→      {/* Table */}
+  1196→      <Card className="rounded-xl shadow-sm">
+  1197→        <CardContent className="p-0">
+  1198→          {loading ? (
+  1199→            <TableSkeleton rows={6} cols={7} />
+  1200→          ) : (
+  1201→            <div className="overflow-x-auto">
+  1202→            <Table>
+  1203→              <TableHeader>
+  1204→                <TableRow>
+  1205→                  <TableHead className="text-xs">Dossier</TableHead>
+  1206→                  <TableHead className="text-xs">Nom</TableHead>
+  1207→                  <TableHead className="text-xs">Prénom</TableHead>
+  1208→                  <TableHead className="text-xs">Téléphone</TableHead>
+  1209→                  <TableHead className="text-xs">Sexe</TableHead>
+  1210→                  <TableHead className="text-xs">Groupe Sanguin</TableHead>
+  1211→                  <TableHead className="text-xs">Date Création</TableHead>
+  1212→                </TableRow>
+  1213→              </TableHeader>
+  1214→              <TableBody>
+  1215→                {patients.map((p: any) => (
+  1216→                  <TableRow key={p.id}>
+  1217→                    <TableCell className="text-xs font-mono font-medium">{p.folderNumber}</TableCell>
+  1218→                    <TableCell className="text-xs font-medium">{p.lastName}</TableCell>
+  1219→                    <TableCell className="text-xs">{p.firstName}</TableCell>
+  1220→                    <TableCell className="text-xs">{p.phone}</TableCell>
+  1221→                    <TableCell className="text-xs">{p.gender === 'M' ? 'Masculin' : 'Féminin'}</TableCell>
+  1222→                    <TableCell className="text-xs">{p.bloodType || '—'}</TableCell>
+  1223→                    <TableCell className="text-xs">{fmtDate(p.createdAt)}</TableCell>
+  1224→                  </TableRow>
+  1225→                ))}
+  1226→                {patients.length === 0 && (
+  1227→                  <TableRow>
+  1228→                    <TableCell colSpan={7} className="text-center py-16">
+  1229→                      <Heart className="w-12 h-12 mx-auto mb-3 text-muted-foreground/30" />
+  1230→                      <p className="text-sm font-medium text-muted-foreground mb-1">Aucun patient enregistré</p>
+  1231→                      <p className="text-xs text-muted-foreground/70 mb-4">Commencez par ajouter le premier patient</p>
+  1232→                      <Button size="sm" onClick={() => setDialogOpen(true)} className="bg-emerald-700 hover:bg-emerald-800 text-white">
+  1233→                        <Plus className="w-3.5 h-3.5 mr-1.5" />
+  1234→                        Créer un patient
+  1235→                      </Button>
+  1236→                    </TableCell>
+  1237→                  </TableRow>
+  1238→                )}
+  1239→              </TableBody>
+  1240→            </Table>
+  1241→            </div>
+  1242→          )}
+  1243→        </CardContent>
+  1244→      </Card>
+  1245→
+  1246→      {/* New Patient Dialog */}
+  1247→      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+  1248→        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+  1249→          <DialogHeader>
+  1250→            <DialogTitle>Nouveau Patient</DialogTitle>
+  1251→          </DialogHeader>
+  1252→          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+  1253→            <div className="space-y-1.5">
+  1254→              <Label className="text-xs">Prénom *</Label>
+  1255→              <Input value={form.firstName} onChange={(e) => updateForm('firstName', e.target.value)} />
+  1256→            </div>
+  1257→            <div className="space-y-1.5">
+  1258→              <Label className="text-xs">Nom *</Label>
+  1259→              <Input value={form.lastName} onChange={(e) => updateForm('lastName', e.target.value)} />
+  1260→            </div>
+  1261→            <div className="space-y-1.5">
+  1262→              <Label className="text-xs">Téléphone *</Label>
+  1263→              <Input value={form.phone} onChange={(e) => updateForm('phone', e.target.value)} />
+  1264→            </div>
+  1265→            <div className="space-y-1.5">
+  1266→              <Label className="text-xs">Email</Label>
+  1267→              <Input type="email" value={form.email} onChange={(e) => updateForm('email', e.target.value)} />
+  1268→            </div>
+  1269→            <div className="space-y-1.5">
+  1270→              <Label className="text-xs">Date de naissance</Label>
+  1271→              <Input type="date" value={form.dateOfBirth} onChange={(e) => updateForm('dateOfBirth', e.target.value)} />
+  1272→            </div>
+  1273→            <div className="space-y-1.5">
+  1274→              <Label className="text-xs">Sexe</Label>
+  1275→              <Select value={form.gender} onValueChange={(v) => updateForm('gender', v)}>
+  1276→                <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+  1277→                <SelectContent>
+  1278→                  <SelectItem value="M">Masculin</SelectItem>
+  1279→                  <SelectItem value="F">Féminin</SelectItem>
+  1280→                </SelectContent>
+  1281→              </Select>
+  1282→            </div>
+  1283→            <div className="space-y-1.5">
+  1284→              <Label className="text-xs">Groupe sanguin</Label>
+  1285→              <Select value={form.bloodType} onValueChange={(v) => updateForm('bloodType', v)}>
+  1286→                <SelectTrigger className="w-full"><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+  1287→                <SelectContent>
+  1288→                  {BLOOD_TYPES.map((bt) => (
+  1289→                    <SelectItem key={bt} value={bt}>{bt}</SelectItem>
+  1290→                  ))}
+  1291→                </SelectContent>
+  1292→              </Select>
+  1293→            </div>
+  1294→            <div className="space-y-1.5">
+  1295→              <Label className="text-xs">Ville</Label>
+  1296→              <Input value={form.city} onChange={(e) => updateForm('city', e.target.value)} />
+  1297→            </div>
+  1298→            <div className="space-y-1.5 sm:col-span-2">
+  1299→              <Label className="text-xs">Adresse</Label>
+  1300→              <Input value={form.address} onChange={(e) => updateForm('address', e.target.value)} />
+  1301→            </div>
+  1302→            <div className="space-y-1.5 sm:col-span-2">
+  1303→              <Label className="text-xs">Allergies</Label>
+  1304→              <Input value={form.allergies} onChange={(e) => updateForm('allergies', e.target.value)} placeholder="Séparer par des virgules" />
+  1305→            </div>
+  1306→            <div className="space-y-1.5">
+  1307→              <Label className="text-xs">Contact d&apos;urgence</Label>
+  1308→              <Input value={form.emergencyContact} onChange={(e) => updateForm('emergencyContact', e.target.value)} />
+  1309→            </div>
+  1310→            <div className="space-y-1.5">
+  1311→              <Label className="text-xs">Tél. d&apos;urgence</Label>
+  1312→              <Input value={form.emergencyPhone} onChange={(e) => updateForm('emergencyPhone', e.target.value)} />
+  1313→            </div>
+  1314→            <div className="space-y-1.5">
+  1315→              <Label className="text-xs">Assurance</Label>
+  1316→              <Input value={form.insuranceProvider} onChange={(e) => updateForm('insuranceProvider', e.target.value)} />
+  1317→            </div>
+  1318→            <div className="space-y-1.5">
+  1319→              <Label className="text-xs">N° Assurance</Label>
+  1320→              <Input value={form.insuranceNumber} onChange={(e) => updateForm('insuranceNumber', e.target.value)} />
+  1321→            </div>
+  1322→          </div>
+  1323→          <DialogFooter>
+  1324→            <Button variant="outline" onClick={() => setDialogOpen(false)}>Annuler</Button>
+  1325→            <Button onClick={handleSave} disabled={saving} className="bg-emerald-700 hover:bg-emerald-800 text-white">
+  1326→              {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+  1327→              Enregistrer
+  1328→            </Button>
+  1329→          </DialogFooter>
+  1330→        </DialogContent>
+  1331→      </Dialog>
+  1332→    </div>
+  1333→  )
+  1334→}
+  1335→
+  1336→/* ═══════════════════════════════════════════════════
+  1337→   DEPARTMENTS VIEW
+  1338→   ═══════════════════════════════════════════════════ */
+  1339→
+  1340→function DepartmentsView() {
+  1341→  const [departments, setDepartments] = useState<any[]>([])
+  1342→  const [loading, setLoading] = useState(true)
+  1343→  const [dialogOpen, setDialogOpen] = useState(false)
+  1344→  const [saving, setSaving] = useState(false)
+  1345→  const [form, setForm] = useState({ name: '', type: 'clinique', description: '', color: '#047857' })
+  1346→
+  1347→  const load = useCallback(async () => {
+  1348→    setLoading(true)
+  1349→    try {
+  1350→      const res = await fetch('/api/departments')
+  1351→      setDepartments(await res.json())
+  1352→    } catch {
+  1353→      toast.error('Erreur de chargement des départements')
+  1354→    } finally {
+  1355→      setLoading(false)
+  1356→    }
+  1357→  }, [])
+  1358→
+  1359→  useEffect(() => { load() }, [load])
+  1360→
+  1361→  const handleSave = async () => {
+  1362→    if (!form.name) { toast.error('Nom requis'); return }
+  1363→    setSaving(true)
+  1364→    try {
+  1365→      const res = await fetch('/api/departments', {
+  1366→        method: 'POST',
+  1367→        headers: { 'Content-Type': 'application/json' },
+  1368→        body: JSON.stringify(form),
+  1369→      })
+  1370→      if (!res.ok) { const d = await res.json(); toast.error(d.error); return }
+  1371→      toast.success('Département créé')
+  1372→      setDialogOpen(false)
+  1373→      setForm({ name: '', type: 'clinique', description: '', color: '#047857' })
+  1374→      load()
+  1375→    } catch { toast.error('Erreur serveur') } finally { setSaving(false) }
+  1376→  }
+  1377→
+  1378→  return (
+  1379→    <div className="space-y-6 animate-fade-in-up">
+  1380→      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+  1381→        <div>
+  1382→          <h1 className="text-2xl font-bold">Départements</h1>
+  1383→          <p className="text-muted-foreground text-sm mt-1">
+  1384→            {departments.length} département{departments.length > 1 ? 's' : ''}
+  1385→          </p>
+  1386→        </div>
+  1387→        <Button onClick={() => setDialogOpen(true)} className="bg-emerald-700 hover:bg-emerald-800 text-white">
+  1388→          <Plus className="w-4 h-4 mr-2" />
+  1389→          Nouveau Département
+  1390→        </Button>
+  1391→      </div>
+  1392→
+  1393→      {loading ? (
+  1394→        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+  1395→          {Array.from({ length: 6 }).map((_, i) => <CardSkeleton key={i} />)}
+  1396→        </div>
+  1397→      ) : (
+  1398→        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+  1399→          {departments.map((dept: any) => (
+  1400→            <Card key={dept.id} className="card-hover overflow-hidden">
+  1401→              <div className="h-1.5" style={{ backgroundColor: dept.color || '#047857' }} />
+  1402→              <CardContent className="p-5">
+  1403→                <div className="flex items-start justify-between mb-2">
+  1404→                  <h3 className="font-semibold text-sm">{dept.name}</h3>
+  1405→                  <Badge variant="outline" className="text-xs capitalize">
+  1406→                    {dept.type}
+  1407→                  </Badge>
+  1408→                </div>
+  1409→                {dept.description && (
+  1410→                  <p className="text-xs text-muted-foreground line-clamp-2 mb-3">{dept.description}</p>
+  1411→                )}
+  1412→                <Separator className="my-3" />
+  1413→                <div className="flex items-center justify-between text-xs text-muted-foreground">
+  1414→                  <span className="flex items-center gap-1">
+  1415→                    <Users className="w-3.5 h-3.5" />
+  1416→                    {dept._count?.staff || 0} membre{(dept._count?.staff || 0) > 1 ? 's' : ''}
+  1417→                  </span>
+  1418→                  {dept.head && (
+  1419→                    <span>
+  1420→                      Chef : Dr. {dept.head.firstName} {dept.head.lastName}
+  1421→                    </span>
+  1422→                  )}
+  1423→                </div>
+  1424→              </CardContent>
+  1425→            </Card>
+  1426→          ))}
+  1427→          {departments.length === 0 && (
+  1428→            <div className="col-span-full text-center py-16 text-muted-foreground">
+  1429→              <Building2 className="w-10 h-10 mx-auto mb-3 opacity-30" />
+  1430→              Aucun département enregistré
+  1431→            </div>
+  1432→          )}
+  1433→        </div>
+  1434→      )}
+  1435→
+  1436→      {/* Create Dialog */}
+  1437→      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+  1438→        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+  1439→          <DialogHeader><DialogTitle>Nouveau Département</DialogTitle></DialogHeader>
+  1440→          <div className="space-y-4">
+  1441→            <div className="space-y-1.5">
+  1442→              <Label className="text-xs">Nom *</Label>
+  1443→              <Input value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} />
+  1444→            </div>
+  1445→            <div className="space-y-1.5">
+  1446→              <Label className="text-xs">Type</Label>
+  1447→              <Select value={form.type} onValueChange={(v) => setForm((p) => ({ ...p, type: v }))}>
+  1448→                <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+  1449→                <SelectContent>
+  1450→                  {DEPT_TYPES.map((t) => (
+  1451→                    <SelectItem key={t} value={t} className="capitalize">{t.replace('_', ' ')}</SelectItem>
+  1452→                  ))}
+  1453→                </SelectContent>
+  1454→              </Select>
+  1455→            </div>
+  1456→            <div className="space-y-1.5">
+  1457→              <Label className="text-xs">Description</Label>
+  1458→              <Input value={form.description} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} />
+  1459→            </div>
+  1460→            <div className="space-y-1.5">
+  1461→              <Label className="text-xs">Couleur</Label>
+  1462→              <div className="flex items-center gap-2">
+  1463→                <input
+  1464→                  type="color"
+  1465→                  value={form.color}
+  1466→                  onChange={(e) => setForm((p) => ({ ...p, color: e.target.value }))}
+  1467→                  className="w-10 h-10 rounded cursor-pointer border-0"
+  1468→                />
+  1469→                <Input value={form.color} onChange={(e) => setForm((p) => ({ ...p, color: e.target.value }))} className="flex-1" />
+  1470→              </div>
+  1471→            </div>
+  1472→          </div>
+  1473→          <DialogFooter>
+  1474→            <Button variant="outline" onClick={() => setDialogOpen(false)}>Annuler</Button>
+  1475→            <Button onClick={handleSave} disabled={saving} className="bg-emerald-700 hover:bg-emerald-800 text-white">
+  1476→              {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+  1477→              Créer
+  1478→            </Button>
+  1479→          </DialogFooter>
+  1480→        </DialogContent>
+  1481→      </Dialog>
+  1482→    </div>
+  1483→  )
+  1484→}
+  1485→
+  1486→/* ═══════════════════════════════════════════════════
+  1487→   STAFF VIEW
+  1488→   ═══════════════════════════════════════════════════ */
+  1489→
+  1490→function StaffView() {
+  1491→  const [staffList, setStaffList] = useState<any[]>([])
+  1492→  const [roles, setRoles] = useState<any[]>([])
+  1493→  const [departments, setDepartments] = useState<any[]>([])
+  1494→  const [loading, setLoading] = useState(true)
+  1495→  const [dialogOpen, setDialogOpen] = useState(false)
+  1496→  const [saving, setSaving] = useState(false)
+  1497→  const [deptFilter, setDeptFilter] = useState('')
+  1498→  const [roleFilter, setRoleFilter] = useState('')
+  1499→  const [statusFilter, setStatusFilter] = useState('')
+  1500→  const [form, setForm] = useState({
+  1501→    firstName: '', lastName: '', phone: '', email: '', gender: 'M',
+  1502→    departmentId: '', roleId: '', specialty: '', licenseNumber: '',
+  1503→  })
+  1504→
+  1505→  const load = useCallback(async () => {
+  1506→    setLoading(true)
+  1507→    try {
+  1508→      const params = new URLSearchParams()
+  1509→      if (deptFilter) params.set('departmentId', deptFilter)
+  1510→      if (roleFilter) params.set('roleId', roleFilter)
+  1511→      if (statusFilter) params.set('status', statusFilter)
+  1512→      const [sRes, dRes] = await Promise.all([
+  1513→        fetch(`/api/staff?${params.toString()}`),
+  1514→        fetch('/api/departments'),
+  1515→      ])
+  1516→      const sData = await sRes.json()
+  1517→      const dData = await dRes.json()
+  1518→      setStaffList(sData)
+  1519→      setDepartments(dData)
+  1520→      // Load all staff for role dropdown (unfiltered)
+  1521→      const allRes = await fetch('/api/staff')
+  1522→      const allData = await allRes.json()
+  1523→      const roleMap = new Map<string, any>()
+  1524→      allData.forEach((s: any) => {
+  1525→        if (s.role && !roleMap.has(s.role.id)) roleMap.set(s.role.id, s.role)
+  1526→      })
+  1527→      setRoles(Array.from(roleMap.values()))
+  1528→    } catch {
+  1529→      toast.error('Erreur de chargement du personnel')
+  1530→    } finally {
+  1531→      setLoading(false)
+  1532→    }
+  1533→  }, [deptFilter, roleFilter, statusFilter])
+  1534→
+  1535→  useEffect(() => { load() }, [load])
+  1536→
+  1537→  const hasActiveFilters = deptFilter || roleFilter || statusFilter
+  1538→  const clearFilters = () => { setDeptFilter(''); setRoleFilter(''); setStatusFilter('') }
+  1539→
+  1540→  const handleSave = async () => {
+  1541→    if (!form.firstName || !form.lastName || !form.phone || !form.roleId) {
+  1542→      toast.error('Prénom, nom, téléphone et rôle sont requis')
+  1543→      return
+  1544→    }
+  1545→    setSaving(true)
+  1546→    try {
+  1547→      const body: Record<string, string> = { ...form }
+  1548→      if (!body.departmentId) delete body.departmentId
+  1549→      const res = await fetch('/api/staff', {
+  1550→        method: 'POST',
+  1551→        headers: { 'Content-Type': 'application/json' },
+  1552→        body: JSON.stringify(body),
+  1553→      })
+  1554→      if (!res.ok) { const d = await res.json(); toast.error(d.error); return }
+  1555→      toast.success('Membre du personnel ajouté')
+  1556→      setDialogOpen(false)
+  1557→      setForm({ firstName: '', lastName: '', phone: '', email: '', gender: 'M', departmentId: '', roleId: '', specialty: '', licenseNumber: '' })
+  1558→      load()
+  1559→    } catch { toast.error('Erreur serveur') } finally { setSaving(false) }
+  1560→  }
+  1561→
+  1562→  const updateForm = (f: string, v: string) => setForm((p) => ({ ...p, [f]: v }))
+  1563→
+  1564→  return (
+  1565→    <div className="space-y-6 animate-fade-in-up">
+  1566→      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+  1567→        <div>
+  1568→          <h1 className="text-2xl font-bold">Personnel</h1>
+  1569→          <p className="text-muted-foreground text-sm mt-1">{staffList.length} membre{staffList.length > 1 ? 's' : ''} trouvé{staffList.length > 1 ? 's' : ''}</p>
+  1570→        </div>
+  1571→        <Button onClick={() => setDialogOpen(true)} className="bg-emerald-700 hover:bg-emerald-800 text-white">
+  1572→          <Plus className="w-4 h-4 mr-2" />
+  1573→          Nouveau Membre
+  1574→        </Button>
+  1575→      </div>
+  1576→
+  1577→      {/* Filters row */}
+  1578→      <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
+  1579→        <Select value={deptFilter || 'all'} onValueChange={(v) => setDeptFilter(v === 'all' ? '' : v)}>
+  1580→          <SelectTrigger className="w-[180px]"><SelectValue placeholder="Département" /></SelectTrigger>
+  1581→          <SelectContent>
+  1582→            <SelectItem value="all">Tous les départements</SelectItem>
+  1583→            {departments.map((d: any) => (
+  1584→              <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+  1585→            ))}
+  1586→          </SelectContent>
+  1587→        </Select>
+  1588→        <Select value={roleFilter || 'all'} onValueChange={(v) => setRoleFilter(v === 'all' ? '' : v)}>
+  1589→          <SelectTrigger className="w-[180px]"><SelectValue placeholder="Rôle" /></SelectTrigger>
+  1590→          <SelectContent>
+  1591→            <SelectItem value="all">Tous les rôles</SelectItem>
+  1592→            {roles.map((r: any) => (
+  1593→              <SelectItem key={r.id} value={r.id}>{r.label || r.name}</SelectItem>
+  1594→            ))}
+  1595→          </SelectContent>
+  1596→        </Select>
+  1597→        <Select value={statusFilter || 'all'} onValueChange={(v) => setStatusFilter(v === 'all' ? '' : v)}>
+  1598→          <SelectTrigger className="w-[140px]"><SelectValue placeholder="Statut" /></SelectTrigger>
+  1599→          <SelectContent>
+  1600→            <SelectItem value="all">Tous</SelectItem>
+  1601→            <SelectItem value="actif">Actif</SelectItem>
+  1602→            <SelectItem value="inactif">Inactif</SelectItem>
+  1603→          </SelectContent>
+  1604→        </Select>
+  1605→        {hasActiveFilters && (
+  1606→          <Button variant="ghost" size="sm" className="h-9 text-xs text-muted-foreground" onClick={clearFilters}>
+  1607→            <X className="w-3 h-3 mr-1" />
+  1608→            Réinitialiser
+  1609→          </Button>
+  1610→        )}
+  1611→      </div>
+  1612→
+  1613→      <Card className="rounded-xl shadow-sm">
+  1614→        <CardContent className="p-0">
+  1615→          {loading ? (
+  1616→            <TableSkeleton rows={6} cols={7} />
+  1617→          ) : (
+  1618→            <div className="overflow-x-auto">
+  1619→            <Table>
+  1620→              <TableHeader>
+  1621→                <TableRow>
+  1622→                  <TableHead className="text-xs">Nom</TableHead>
+  1623→                  <TableHead className="text-xs">Prénom</TableHead>
+  1624→                  <TableHead className="text-xs">Téléphone</TableHead>
+  1625→                  <TableHead className="text-xs">Rôle</TableHead>
+  1626→                  <TableHead className="text-xs">Département</TableHead>
+  1627→                  <TableHead className="text-xs">Spécialité</TableHead>
+  1628→                  <TableHead className="text-xs">Statut</TableHead>
+  1629→                </TableRow>
+  1630→              </TableHeader>
+  1631→              <TableBody>
+  1632→                {staffList.map((s: any) => (
+  1633→                  <TableRow key={s.id}>
+  1634→                    <TableCell className="text-xs font-medium">{s.lastName}</TableCell>
+  1635→                    <TableCell className="text-xs">{s.firstName}</TableCell>
+  1636→                    <TableCell className="text-xs">{s.phone}</TableCell>
+  1637→                    <TableCell className="text-xs">
+  1638→                      <Badge variant="secondary" className="text-xs">{s.role?.label || s.role?.name}</Badge>
+  1639→                    </TableCell>
+  1640→                    <TableCell className="text-xs">{s.department?.name || '—'}</TableCell>
+  1641→                    <TableCell className="text-xs">{s.specialty || '—'}</TableCell>
+  1642→                    <TableCell className="text-xs">
+  1643→                      <Badge className={s.isActive ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : 'bg-red-100 text-red-800 border-red-300'} variant="outline">
+  1644→                        {s.isActive ? 'Actif' : 'Inactif'}
+  1645→                      </Badge>
+  1646→                    </TableCell>
+  1647→                  </TableRow>
+  1648→                ))}
+  1649→                {staffList.length === 0 && (
+  1650→                  <TableRow>
+  1651→                    <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
+  1652→                      <Users className="w-8 h-8 mx-auto mb-2 opacity-30" />
+  1653→                      Aucun personnel enregistré
+  1654→                    </TableCell>
+  1655→                  </TableRow>
+  1656→                )}
+  1657→              </TableBody>
+  1658→            </Table>
+  1659→            </div>
+  1660→          )}
+  1661→        </CardContent>
+  1662→      </Card>
+  1663→
+  1664→      {/* Create Dialog */}
+  1665→      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+  1666→        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+  1667→          <DialogHeader><DialogTitle>Nouveau Membre du Personnel</DialogTitle></DialogHeader>
+  1668→          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+  1669→            <div className="space-y-1.5">
+  1670→              <Label className="text-xs">Prénom *</Label>
+  1671→              <Input value={form.firstName} onChange={(e) => updateForm('firstName', e.target.value)} />
+  1672→            </div>
+  1673→            <div className="space-y-1.5">
+  1674→              <Label className="text-xs">Nom *</Label>
+  1675→              <Input value={form.lastName} onChange={(e) => updateForm('lastName', e.target.value)} />
+  1676→            </div>
+  1677→            <div className="space-y-1.5">
+  1678→              <Label className="text-xs">Téléphone *</Label>
+  1679→              <Input value={form.phone} onChange={(e) => updateForm('phone', e.target.value)} />
+  1680→            </div>
+  1681→            <div className="space-y-1.5">
+  1682→              <Label className="text-xs">Email</Label>
+  1683→              <Input type="email" value={form.email} onChange={(e) => updateForm('email', e.target.value)} />
+  1684→            </div>
+  1685→            <div className="space-y-1.5">
+  1686→              <Label className="text-xs">Sexe</Label>
+  1687→              <Select value={form.gender} onValueChange={(v) => updateForm('gender', v)}>
+  1688→                <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+  1689→                <SelectContent>
+  1690→                  <SelectItem value="M">Masculin</SelectItem>
+  1691→                  <SelectItem value="F">Féminin</SelectItem>
+  1692→                </SelectContent>
+  1693→              </Select>
+  1694→            </div>
+  1695→            <div className="space-y-1.5">
+  1696→              <Label className="text-xs">Département</Label>
+  1697→              <Select value={form.departmentId} onValueChange={(v) => updateForm('departmentId', v)}>
+  1698→                <SelectTrigger className="w-full"><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+  1699→                <SelectContent>
+  1700→                  {departments.map((d: any) => (
+  1701→                    <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+  1702→                  ))}
+  1703→                </SelectContent>
+  1704→              </Select>
+  1705→            </div>
+  1706→            <div className="space-y-1.5">
+  1707→              <Label className="text-xs">Rôle *</Label>
+  1708→              <Select value={form.roleId} onValueChange={(v) => updateForm('roleId', v)}>
+  1709→                <SelectTrigger className="w-full"><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+  1710→                <SelectContent>
+  1711→                  {roles.map((r: any) => (
+  1712→                    <SelectItem key={r.id} value={r.id}>{r.label || r.name}</SelectItem>
+  1713→                  ))}
+  1714→                </SelectContent>
+  1715→              </Select>
+  1716→            </div>
+  1717→            <div className="space-y-1.5">
+  1718→              <Label className="text-xs">Spécialité</Label>
+  1719→              <Input value={form.specialty} onChange={(e) => updateForm('specialty', e.target.value)} />
+  1720→            </div>
+  1721→            <div className="space-y-1.5 sm:col-span-2">
+  1722→              <Label className="text-xs">N° Licence</Label>
+  1723→              <Input value={form.licenseNumber} onChange={(e) => updateForm('licenseNumber', e.target.value)} />
+  1724→            </div>
+  1725→          </div>
+  1726→          <DialogFooter>
+  1727→            <Button variant="outline" onClick={() => setDialogOpen(false)}>Annuler</Button>
+  1728→            <Button onClick={handleSave} disabled={saving} className="bg-emerald-700 hover:bg-emerald-800 text-white">
+  1729→              {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+  1730→              Enregistrer
+  1731→            </Button>
+  1732→          </DialogFooter>
+  1733→        </DialogContent>
+  1734→      </Dialog>
+  1735→    </div>
+  1736→  )
+  1737→}
+  1738→
+  1739→/* ═══════════════════════════════════════════════════
+  1740→   APPOINTMENTS VIEW
+  1741→   ═══════════════════════════════════════════════════ */
+  1742→
+  1743→function AppointmentsView() {
+  1744→  const [appointments, setAppointments] = useState<any[]>([])
+  1745→  const [patients, setPatients] = useState<any[]>([])
+  1746→  const [staffList, setStaffList] = useState<any[]>([])
+  1747→  const [departments, setDepartments] = useState<any[]>([])
+  1748→  const [loading, setLoading] = useState(true)
+  1749→  const [dialogOpen, setDialogOpen] = useState(false)
+  1750→  const [saving, setSaving] = useState(false)
+  1751→  const [deptFilter, setDeptFilter] = useState('')
+  1752→  const [doctorFilter, setDoctorFilter] = useState('')
+  1753→  const [form, setForm] = useState({
+  1754→    patientId: '', staffId: '', date: '', type: 'consultation', reason: '',
+  1755→  })
+  1756→
+  1757→  const load = useCallback(async () => {
+  1758→    setLoading(true)
+  1759→    try {
+  1760→      const params = new URLSearchParams()
+  1761→      if (deptFilter) params.set('departmentId', deptFilter)
+  1762→      if (doctorFilter) params.set('staffId', doctorFilter)
+  1763→      const [aRes, pRes, sRes, dRes] = await Promise.all([
+  1764→        fetch(`/api/appointments?${params.toString()}`),
+  1765→        fetch('/api/patients?limit=100'),
+  1766→        fetch('/api/staff'),
+  1767→        fetch('/api/departments'),
+  1768→      ])
+  1769→      setAppointments(await aRes.json())
+  1770→      const pData = await pRes.json()
+  1771→      setPatients(pData.data || [])
+  1772→      setStaffList(await sRes.json())
+  1773→      setDepartments(await dRes.json())
+  1774→    } catch {
+  1775→      toast.error('Erreur de chargement')
+  1776→    } finally {
+  1777→      setLoading(false)
+  1778→    }
+  1779→  }, [deptFilter, doctorFilter])
+  1780→
+  1781→  useEffect(() => { load() }, [load])
+  1782→
+  1783→  // Status summary
+  1784→  const enAttente = appointments.filter((a: any) => a.status === 'en_attente' || a.status === 'confirme').length
+  1785→  const confirms = appointments.filter((a: any) => a.status === 'confirme').length
+  1786→  const hasFilters = deptFilter || doctorFilter
+  1787→  const clearFilters = () => { setDeptFilter(''); setDoctorFilter('') }
+  1788→
+  1789→  // Doctors with medecin role
+  1790→  const doctors = staffList.filter((s: any) => s.role?.name === 'medecin' || s.role?.name === 'medecin_chef')
+  1791→
+  1792→  const handleSave = async () => {
+  1793→    if (!form.patientId || !form.staffId || !form.date) {
+  1794→      toast.error('Patient, médecin et date sont requis')
+  1795→      return
+  1796→    }
+  1797→    setSaving(true)
+  1798→    try {
+  1799→      const res = await fetch('/api/appointments', {
+  1800→        method: 'POST',
+  1801→        headers: { 'Content-Type': 'application/json' },
+  1802→        body: JSON.stringify(form),
+  1803→      })
+  1804→      if (!res.ok) { const d = await res.json(); toast.error(d.error); return }
+  1805→      toast.success('Rendez-vous créé')
+  1806→      setDialogOpen(false)
+  1807→      setForm({ patientId: '', staffId: '', date: '', type: 'consultation', reason: '' })
+  1808→      load()
+  1809→    } catch { toast.error('Erreur serveur') } finally { setSaving(false) }
+  1810→  }
+  1811→
+  1812→  const updateForm = (f: string, v: string) => setForm((p) => ({ ...p, [f]: v }))
+  1813→
+  1814→  const handleCancel = async (id: string) => {
+  1815→    try {
+  1816→      const res = await fetch('/api/appointments', {
+  1817→        method: 'DELETE',
+  1818→        headers: { 'Content-Type': 'application/json' },
+  1819→        body: JSON.stringify({ id }),
+  1820→      })
+  1821→      if (res.ok) {
+  1822→        toast.success('Rendez-vous annulé')
+  1823→        load()
+  1824→      }
+  1825→    } catch { toast.error('Erreur') }
+  1826→  }
+  1827→
+  1828→  return (
+  1829→    <div className="space-y-6 animate-fade-in-up">
+  1830→      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+  1831→        <div>
+  1832→          <h1 className="text-2xl font-bold">Rendez-vous</h1>
+  1833→          <p className="text-muted-foreground text-sm mt-1">
+  1834→            {appointments.length} rendez-vous
+  1835→            {enAttente > 0 && <span className="text-yellow-600 ml-1">— {enAttente} en attente, {confirms} confirmé{confirms > 1 ? 's' : ''}</span>}
+  1836→          </p>
+  1837→        </div>
+  1838→        <Button onClick={() => setDialogOpen(true)} className="bg-emerald-700 hover:bg-emerald-800 text-white">
+  1839→          <Plus className="w-4 h-4 mr-2" />
+  1840→          Nouveau Rendez-vous
+  1841→        </Button>
+  1842→      </div>
+  1843→
+  1844→      {/* Filters */}
+  1845→      <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
+  1846→        <Select value={deptFilter || 'all'} onValueChange={(v) => setDeptFilter(v === 'all' ? '' : v)}>
+  1847→          <SelectTrigger className="w-[200px]"><SelectValue placeholder="Département" /></SelectTrigger>
+  1848→          <SelectContent>
+  1849→            <SelectItem value="all">Tous les départements</SelectItem>
+  1850→            {departments.map((d: any) => (
+  1851→              <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+  1852→            ))}
+  1853→          </SelectContent>
+  1854→        </Select>
+  1855→        <Select value={doctorFilter || 'all'} onValueChange={(v) => setDoctorFilter(v === 'all' ? '' : v)}>
+  1856→          <SelectTrigger className="w-[200px]"><SelectValue placeholder="Médecin" /></SelectTrigger>
+  1857→          <SelectContent className="max-h-60">
+  1858→            <SelectItem value="all">Tous les médecins</SelectItem>
+  1859→            {doctors.map((s: any) => (
+  1860→              <SelectItem key={s.id} value={s.id}>Dr. {s.firstName} {s.lastName}</SelectItem>
+  1861→            ))}
+  1862→          </SelectContent>
+  1863→        </Select>
+  1864→        {hasFilters && (
+  1865→          <Button variant="ghost" size="sm" className="h-9 text-xs text-muted-foreground" onClick={clearFilters}>
+  1866→            <X className="w-3 h-3 mr-1" />
+  1867→            Réinitialiser
+  1868→          </Button>
+  1869→        )}
+  1870→      </div>
+  1871→
+  1872→      <Card className="rounded-xl shadow-sm">
+  1873→        <CardContent className="p-0">
+  1874→          {loading ? (
+  1875→            <TableSkeleton rows={6} cols={6} />
+  1876→          ) : (
+  1877→            <div className="overflow-x-auto">
+  1878→            <Table>
+  1879→              <TableHeader>
+  1880→                <TableRow>
+  1881→                  <TableHead className="text-xs">Date</TableHead>
+  1882→                  <TableHead className="text-xs">Patient</TableHead>
+  1883→                  <TableHead className="text-xs">Médecin</TableHead>
+  1884→                  <TableHead className="text-xs">Département</TableHead>
+  1885→                  <TableHead className="text-xs">Statut</TableHead>
+  1886→                  <TableHead className="text-xs">Motif</TableHead>
+  1887→                  <TableHead className="text-xs"></TableHead>
+  1888→                </TableRow>
+  1889→              </TableHeader>
+  1890→              <TableBody>
+  1891→                {appointments.map((a: any) => {
+  1892→                  const st = STATUS_APPOINTMENT[a.status] || STATUS_APPOINTMENT.en_attente
+  1893→                  return (
+  1894→                    <TableRow key={a.id}>
+  1895→                      <TableCell className="text-xs">{fmtDateTime(a.date)}</TableCell>
+  1896→                      <TableCell className="text-xs font-medium">
+  1897→                        {a.patient?.firstName} {a.patient?.lastName}
+  1898→                      </TableCell>
+  1899→                      <TableCell className="text-xs">
+  1900→                        Dr. {a.staff?.firstName} {a.staff?.lastName}
+  1901→                      </TableCell>
+  1902→                      <TableCell className="text-xs">{a.staff?.department?.name || a.department?.name || '—'}</TableCell>
+  1903→                      <TableCell className="text-xs">
+  1904→                        <Badge variant="outline" className={st.className}>{st.label}</Badge>
+  1905→                      </TableCell>
+  1906→                      <TableCell className="text-xs max-w-[200px] truncate">{a.reason || '—'}</TableCell>
+  1907→                      <TableCell className="text-xs">
+  1908→                        {a.status === 'en_attente' && (
+  1909→                          <Button variant="ghost" size="sm" onClick={() => handleCancel(a.id)} className="h-7 text-red-600 hover:text-red-700 hover:bg-red-50">
+  1910→                            <XCircle className="w-3.5 h-3.5 mr-1" />
+  1911→                            Annuler
+  1912→                          </Button>
+  1913→                        )}
+  1914→                      </TableCell>
+  1915→                    </TableRow>
+  1916→                  )
+  1917→                })}
+  1918→                {appointments.length === 0 && (
+  1919→                  <TableRow>
+  1920→                    <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
+  1921→                      <Calendar className="w-8 h-8 mx-auto mb-2 opacity-30" />
+  1922→                      Aucun rendez-vous
+  1923→                    </TableCell>
+  1924→                  </TableRow>
+  1925→                )}
+  1926→              </TableBody>
+  1927→            </Table>
+  1928→            </div>
+  1929→          )}
+  1930→        </CardContent>
+  1931→      </Card>
+  1932→
+  1933→      {/* Create Dialog */}
+  1934→      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+  1935→        <DialogContent className="sm:max-w-lg">
+  1936→          <DialogHeader><DialogTitle>Nouveau Rendez-vous</DialogTitle></DialogHeader>
+  1937→          <div className="space-y-4">
+  1938→            <div className="space-y-1.5">
+  1939→              <Label className="text-xs">Patient *</Label>
+  1940→              <Select value={form.patientId} onValueChange={(v) => updateForm('patientId', v)}>
+  1941→                <SelectTrigger className="w-full"><SelectValue placeholder="Sélectionner un patient" /></SelectTrigger>
+  1942→                <SelectContent className="max-h-60">
+  1943→                  {patients.map((p: any) => (
+  1944→                    <SelectItem key={p.id} value={p.id}>
+  1945→                      {p.firstName} {p.lastName} ({p.folderNumber})
+  1946→                    </SelectItem>
+  1947→                  ))}
+  1948→                </SelectContent>
+  1949→              </Select>
+  1950→            </div>
+  1951→            <div className="space-y-1.5">
+  1952→              <Label className="text-xs">Médecin *</Label>
+  1953→              <Select value={form.staffId} onValueChange={(v) => updateForm('staffId', v)}>
+  1954→                <SelectTrigger className="w-full"><SelectValue placeholder="Sélectionner un médecin" /></SelectTrigger>
+  1955→                <SelectContent className="max-h-60">
+  1956→                  {staffList.map((s: any) => (
+  1957→                    <SelectItem key={s.id} value={s.id}>
+  1958→                      Dr. {s.firstName} {s.lastName} {s.specialty ? `— ${s.specialty}` : ''}
+  1959→                    </SelectItem>
+  1960→                  ))}
+  1961→                </SelectContent>
+  1962→              </Select>
+  1963→            </div>
+  1964→            <div className="space-y-1.5">
+  1965→              <Label className="text-xs">Date et heure *</Label>
+  1966→              <Input type="datetime-local" value={form.date} onChange={(e) => updateForm('date', e.target.value)} />
+  1967→            </div>
+  1968→            <div className="space-y-1.5">
+  1969→              <Label className="text-xs">Type</Label>
+  1970→              <Select value={form.type} onValueChange={(v) => updateForm('type', v)}>
+  1971→                <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+  1972→                <SelectContent>
+  1973→                  <SelectItem value="consultation">Consultation</SelectItem>
+  1974→                  <SelectItem value="suivi">Suivi</SelectItem>
+  1975→                  <SelectItem value="urgence">Urgence</SelectItem>
+  1976→                  <SelectItem value="controle">Contrôle</SelectItem>
+  1977→                </SelectContent>
+  1978→              </Select>
+  1979→            </div>
+  1980→            <div className="space-y-1.5">
+  1981→              <Label className="text-xs">Motif</Label>
+  1982→              <Input value={form.reason} onChange={(e) => updateForm('reason', e.target.value)} placeholder="Motif de la visite" />
+  1983→            </div>
+  1984→          </div>
+  1985→          <DialogFooter>
+  1986→            <Button variant="outline" onClick={() => setDialogOpen(false)}>Annuler</Button>
+  1987→            <Button onClick={handleSave} disabled={saving} className="bg-emerald-700 hover:bg-emerald-800 text-white">
+  1988→              {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+  1989→              Créer
+  1990→            </Button>
+  1991→          </DialogFooter>
+  1992→        </DialogContent>
+  1993→      </Dialog>
+  1994→    </div>
+  1995→  )
+  1996→}
+  1997→
+  1998→/* ═══════════════════════════════════════════════════
+  1999→   CONSULTATIONS VIEW
+  2000→   ═══════════════════════════════════════════════════ */
+
+[showing lines 1-2000 of 4995; use offset=2001 with limit to continue reading]

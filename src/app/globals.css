@@ -250,6 +250,17 @@ mark.search-highlight {
   pointer-events: auto;
 }
 
+/* ── Table row hover effect ── */
+tbody tr {
+  transition: background-color 0.15s ease;
+}
+tbody tr:hover > td {
+  background-color: oklch(0.967 0.005 155 / 50%);
+}
+.dark tbody tr:hover > td {
+  background-color: oklch(0.22 0.01 155 / 50%);
+}
+
 /* ── Print Styles ── */
 @media print {
   .no-print { display: none !important; }

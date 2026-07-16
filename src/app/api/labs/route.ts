@@ -3,12 +3,13 @@ import { db } from '@/lib/db'
 
 const HOSPITAL_ID = process.env.HOSPITAL_ID || 'hosp_demo_001'
 
-// GET /api/labs?status=...&patientId=...
+// GET /api/labs?status=...&patientId=...&staffId=...
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url)
     const status = searchParams.get('status')
     const patientId = searchParams.get('patientId')
+    const staffId = searchParams.get('staffId')
 
     const where: Record<string, unknown> = { hospitalId: HOSPITAL_ID }
 
@@ -17,6 +18,9 @@ export async function GET(req: NextRequest) {
     }
     if (patientId) {
       where.patientId = patientId
+    }
+    if (staffId) {
+      where.staffId = staffId
     }
 
     const labs = await db.labRequest.findMany({

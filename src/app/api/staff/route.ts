@@ -3,19 +3,40 @@ import { db } from '@/lib/db'
 
 const HOSPITAL_ID = process.env.HOSPITAL_ID || 'hosp_demo_001'
 
-// GET /api/staff?departmentId=...
+// GET /api/staff?departmentId=...&roleId=...&status=...&q=...
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url)
-    const departmentId = searchParams.get('departmentId') || undefined
+    const departmentId = searchParams.get('departmentId') || ''
+    const roleId = searchParams.get('roleId') || ''
+    const status = searchParams.get('status') || ''
+    const q = searchParams.get('q') || ''
 
     const where: Record<string, unknown> = {
       hospitalId: HOSPITAL_ID,
-      isActive: true,
+      deletedAt: null,
     }
 
     if (departmentId) {
       where.departmentId = departmentId
+    }
+
+    if (roleId) {
+      where.roleId = roleId
+    }
+
+    if (status === 'actif') {
+      where.isActive = true
+    } else if (status === 'inactif') {
+      where.isActive = false
+    }
+
+    if (q) {
+      where.OR = [
+        { firstName: { contains: q } },
+        { lastName: { contains: q } },
+        { phone: { contains: q } },
+      ]
     }
 
     const staff = await db.staff.findMany({
@@ -41,6 +62,20 @@ export async function POST(req: NextRequest) {
     if (!body.firstName || !body.lastName || !body.phone || !body.roleId) {
       return NextResponse.json(
         { error: 'Prénom, nom, téléphone et rôle sont requis' },
+        { status: 400 }
+      )
+    }
+
+    if (body.pin && !/^\d{6}$/.test(body.pin)) {
+      return NextResponse.json(
+        { error: 'Le code PIN doit comporter exactement 6 chiffres' },
+        { status: 400 }
+      )
+    }
+
+    if (body.phone && !/^6\d{8}$/.test(body.phone)) {
+      return NextResponse.json(
+        { error: 'Le numéro de téléphone doit commencer par 6 et comporter 9 chiffres' },
         { status: 400 }
       )
     }
@@ -81,11 +116,18 @@ export async function PUT(req: NextRequest) {
     }
 
     const existing = await db.staff.findFirst({
-      where: { id: body.id, hospitalId: HOSPITAL_ID },
+      where: { id: body.id, hospitalId: HOSPITAL_ID, deletedAt: null },
     })
 
     if (!existing) {
       return NextResponse.json({ error: 'Personnel non trouvé' }, { status: 404 })
+    }
+
+    if (body.pin && !/^\d{6}$/.test(body.pin)) {
+      return NextResponse.json(
+        { error: 'Le code PIN doit comporter exactement 6 chiffres' },
+        { status: 400 }
+      )
     }
 
     const staff = await db.staff.update({
@@ -115,7 +157,7 @@ export async function PUT(req: NextRequest) {
   }
 }
 
-// DELETE /api/staff (soft-delete)
+// DELETE /api/staff (soft-delete: set deletedAt and isActive=false)
 export async function DELETE(req: NextRequest) {
   try {
     const body = await req.json()
@@ -125,7 +167,7 @@ export async function DELETE(req: NextRequest) {
     }
 
     const existing = await db.staff.findFirst({
-      where: { id: body.id, hospitalId: HOSPITAL_ID },
+      where: { id: body.id, hospitalId: HOSPITAL_ID, deletedAt: null },
     })
 
     if (!existing) {
@@ -134,7 +176,7 @@ export async function DELETE(req: NextRequest) {
 
     await db.staff.update({
       where: { id: body.id },
-      data: { isActive: false },
+      data: { isActive: false, deletedAt: new Date() },
     })
 
     return NextResponse.json({ success: true })

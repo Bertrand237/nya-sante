@@ -78,10 +78,11 @@ model Department {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  hospital    Hospital   @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
-  head        Staff?     @relation("DepartmentHead", fields: [headId], references: [id])
+  hospital    Hospital      @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  head        Staff?        @relation("DepartmentHead", fields: [headId], references: [id])
   staff       Staff[]
   services    Service[]
+  appointments Appointment[]
 
   @@index([hospitalId])
 }
@@ -145,6 +146,7 @@ model Staff {
   hireDate      DateTime @default(now())
   isActive      Boolean  @default(true)
   pin           String?
+  deletedAt     DateTime?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -253,6 +255,7 @@ model Appointment {
   hospital      Hospital      @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
   patient       Patient       @relation(fields: [patientId], references: [id], onDelete: Cascade)
   staff         Staff         @relation(fields: [staffId], references: [id])
+  department    Department?   @relation(fields: [departmentId], references: [id])
 
   @@index([hospitalId])
   @@index([patientId])
