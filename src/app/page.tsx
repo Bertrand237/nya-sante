@@ -293,40 +293,44 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
 
       {/* Navigation */}
       <ScrollArea className="flex-1 py-2 px-3">
-        <nav className="space-y-0.5">
+        <nav className="space-y-px">
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon
             const isActive = currentView === item.key
             return (
-              <button
-                key={item.key}
-                onClick={() => handleNav(item.key)}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 ${
-                  isActive
-                    ? 'bg-emerald-700/60 text-white shadow-sm'
-                    : 'text-emerald-200 hover:bg-emerald-800/60 hover:text-white'
-                }`}
-              >
-                <Icon className="w-4.5 h-4.5 shrink-0" />
-                <span className="truncate">{item.label}</span>
-                {isActive && <ChevronRight className="w-4 h-4 ml-auto opacity-60" />}
-              </button>
+              <div key={item.key}>
+                {(item.key === 'settings' || item.key === 'platforms') && (
+                  <div className="my-2 border-t border-emerald-700/50" />
+                )}
+                <button
+                  onClick={() => handleNav(item.key)}
+                  className={`w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-[13px] font-medium transition-all duration-150 ${
+                    isActive
+                      ? 'bg-emerald-700/60 text-white shadow-sm'
+                      : 'text-emerald-200 hover:bg-emerald-800/60 hover:text-white'
+                  }`}
+                >
+                  <Icon className="w-4 h-4 shrink-0" />
+                  <span className="truncate">{item.label}</span>
+                  {isActive && <ChevronRight className="w-3.5 h-3.5 ml-auto opacity-60" />}
+                </button>
+              </div>
             )
           })}
         </nav>
       </ScrollArea>
 
       {/* User info */}
-      <div className="border-t border-emerald-800 p-4">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-9 h-9 rounded-full bg-emerald-700 flex items-center justify-center shrink-0">
-            <UserCircle className="w-5 h-5 text-emerald-200" />
+      <div className="border-t border-emerald-800 px-3 py-3">
+        <div className="flex items-center gap-2.5 mb-2">
+          <div className="w-8 h-8 rounded-full bg-emerald-700 flex items-center justify-center shrink-0">
+            <UserCircle className="w-4.5 h-4.5 text-emerald-200" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">
+            <p className="text-xs font-medium truncate">
               {user?.firstName} {user?.lastName}
             </p>
-            <p className="text-xs text-emerald-400 truncate">
+            <p className="text-[11px] text-emerald-400 truncate">
               {user?.role?.label || user?.role?.name}
             </p>
           </div>
@@ -335,9 +339,9 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
           variant="ghost"
           size="sm"
           onClick={handleLogout}
-          className="w-full justify-start text-emerald-300 hover:text-white hover:bg-emerald-800"
+          className="w-full justify-start text-emerald-300 hover:text-white hover:bg-emerald-800 h-8 text-xs"
         >
-          <LogOut className="w-4 h-4 mr-2" />
+          <LogOut className="w-3.5 h-3.5 mr-2" />
           Déconnexion
         </Button>
       </div>
