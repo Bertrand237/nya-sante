@@ -143,7 +143,7 @@ export default function PlatformsView() {
           {/* Chrome on Android */}
           <div>
             <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
-              <Chrome className="w-4 h-4" />
+              <CircleDot className="w-4 h-4" />
               Google Chrome (Android)
             </h4>
             <div className="bg-muted/50 rounded-lg p-3 space-y-2">
