@@ -261,6 +261,58 @@ tbody tr:hover > td {
   background-color: oklch(0.22 0.01 155 / 50%);
 }
 
+/* ── Login Screen Styles ── */
+@keyframes login-gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.login-animated-gradient {
+  background: linear-gradient(-45deg, #047857, #0d9488, #065f46, #064e3b, #0f766e);
+  background-size: 400% 400%;
+  animation: login-gradient-shift 15s ease infinite;
+}
+
+@keyframes login-logo-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5), 0 0 15px 0 rgba(16, 185, 129, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(16, 185, 129, 0), 0 0 35px 8px rgba(16, 185, 129, 0.15);
+  }
+}
+.login-logo-glow {
+  animation: login-logo-pulse 2.5s ease-in-out infinite;
+}
+
+@keyframes login-border-flow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.login-border-gradient {
+  background: linear-gradient(135deg, rgba(16,185,129,0.7), rgba(13,148,136,0.4), rgba(249,115,22,0.3), rgba(16,185,129,0.7));
+  background-size: 300% 300%;
+  animation: login-border-flow 6s ease infinite;
+}
+
+.login-btn-gradient {
+  background: linear-gradient(135deg, #047857 0%, #0d9488 50%, #047857 100%);
+  background-size: 200% 200%;
+  transition: all 0.3s ease;
+}
+.login-btn-gradient:hover:not(:disabled) {
+  background-position: 100% 100%;
+  box-shadow: 0 8px 25px -5px rgba(4, 120, 87, 0.5);
+  transform: translateY(-1px);
+}
+
+.login-glass-card {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
 /* ── Print Styles ── */
 @media print {
   .no-print { display: none !important; }

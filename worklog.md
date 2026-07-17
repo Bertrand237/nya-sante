@@ -681,3 +681,61 @@ NEXT STEPS FOR USER:
    OR provide a GitHub Personal Access Token to the agent
 2. After first deploy: use `./push.sh "message"` for all future updates
 3. PWA install: open https://nya-sante.fly.dev in Chrome Android → Menu ⋮ → Install
+
+---
+Task ID: 16
+Agent: Main Agent
+Task: Create Notification Center component and integrate into header bar
+
+Work Log:
+- Created /src/components/NotificationCenter.tsx with full notification system:
+  - Defined NotificationType (info, warning, error, success) and Notification interface
+  - TYPE_CONFIG maps each type to icon, border color, background, and icon color
+  - 5 demo notifications with realistic hospital scenarios in French
+  - NotificationItem sub-component with colored left border, read/unread dot indicator
+  - NotificationCenter main component with Bell button, unread count badge (pulsing), framer-motion slide-in dropdown
+  - "Tout marquer comme lu" button, "Voir tout" footer link
+  - Click-outside and Escape key to close
+  - Empty state with bell icon and "Aucune notification" message
+  - ScrollArea for overflow, max-height 360px
+- Integrated into src/app/page.tsx header bar (before ThemeToggle)
+- ESLint: 0 errors
+
+Stage Summary:
+- Notification Center fully functional with demo data and smooth animations
+- Accessible (aria-label, keyboard close), responsive (380px max, mobile-safe)
+- 3 unread demo notifications, 2 read
+
+---
+Task ID: 18
+Agent: frontend-styling-expert
+Task: Improve LoginScreen component styling with glassmorphism, animations, and UX enhancements
+
+Work Log:
+- Added `Eye`, `EyeOff` icons to lucide-react imports in page.tsx
+- Added 5 login-specific CSS classes to globals.css:
+  - `login-animated-gradient`: 5-color gradient background with 15s shifting animation
+  - `login-logo-glow`: pulsing box-shadow glow on logo (2.5s cycle)
+  - `login-border-gradient`: animated 3-color gradient border (emerald → teal → orange → emerald)
+  - `login-btn-gradient`: gradient button with hover shift + shadow + translateY lift
+  - `login-glass-card`: backdrop-blur(24px) with 10% white overlay
+- Rewrote LoginScreen component with all 10 enhancements:
+  1. Animated gradient background (replaces static `nya-gradient`)
+  2. Glassmorphism card (`login-glass-card`, white text)
+  3. Pulsing glow on logo (`login-logo-glow`)
+  4. Staggered fade-in-up animations (100ms increments: 0→100→200→300→400ms)
+  5. Decorative pattern overlay (`nya-pattern` at 20% opacity) + 3 floating blur orbs
+  6. Gradient hover effect on login button (`login-btn-gradient`)
+  7. Version text "v1.0 — PWA" centered at bottom
+  8. Animated gradient border on card (1.5px `login-border-gradient` wrapper)
+  9. PIN toggle visibility (Eye/EyeOff icons, `showPin` state, `tabIndex={-1}`)
+  10. "Mot de passe oublié ?" link → `toast.info('Contactez votre administrateur')`
+- All existing functionality preserved (phone/pin state, handleLogin, setUser, setCurrentView, demo credentials)
+- ESLint: 0 errors
+
+Stage Summary:
+- LoginScreen now features a premium glassmorphism design with animated gradient background
+- Smooth staggered entry animations for all form elements
+- Interactive PIN visibility toggle and forgot-password link
+- Animated gradient border frames the card with a subtle emerald-teal-orange flow
+- Version badge "v1.0 — PWA" displayed at bottom center

@@ -8,6 +8,7 @@ import { useAppStore } from '@/lib/store'
 import { getAllowedViews, getWelcomeMessage } from '@/lib/permissions'
 import { Toaster } from '@/components/ui/sonner'
 import { PWAInstallPrompt, PWAStatusBadge } from '@/components/PWAInstallPrompt'
+import { NotificationCenter } from '@/components/NotificationCenter'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -45,6 +46,8 @@ import {
   Send,
   Sun,
   Moon,
+  Eye,
+  EyeOff,
 } from 'lucide-react'
 
 const DashboardView = dynamic(() => import('@/components/views/DashboardView'), { loading: () => <div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-4 border-emerald-200 border-t-emerald-600 rounded-full" /></div> })
@@ -111,6 +114,7 @@ function LoginScreen() {
   const [phone, setPhone] = useState('655443322')
   const [pin, setPin] = useState('123456')
   const [loading, setLoading] = useState(false)
+  const [showPin, setShowPin] = useState(false)
   const { setUser, setCurrentView } = useAppStore()
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -139,75 +143,124 @@ function LoginScreen() {
   }
 
   return (
-    <div className="min-h-screen nya-gradient nya-pattern flex items-center justify-center p-4">
-      <Card className="w-full max-w-md shadow-2xl border-0 py-8">
-        <CardHeader className="items-center gap-4 pb-2">
-          <div className="w-20 h-20 rounded-2xl bg-emerald-50 flex items-center justify-center overflow-hidden border-2 border-emerald-100">
-            <img src="/nya-logo.png" alt="NYA Santé" className="w-16 h-16 object-contain" />
-          </div>
-          <div className="text-center">
-            <CardTitle className="text-xl font-bold text-emerald-900">
-              Clinique Centrale NYA
-            </CardTitle>
-            <p className="text-sm text-muted-foreground mt-1">
-              Système de Gestion Hospitalière
-            </p>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleLogin} className="space-y-5">
-            <div className="space-y-2">
-              <Label htmlFor="phone" className="text-sm font-medium">
-                <Phone className="inline w-4 h-4 mr-1 -mt-0.5" />
-                Téléphone
-              </Label>
-              <Input
-                id="phone"
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="6XXXXXXXX"
-                className="h-11"
-              />
+    <div className="min-h-screen login-animated-gradient flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Decorative pattern overlay */}
+      <div className="absolute inset-0 nya-pattern opacity-20 pointer-events-none" />
+
+      {/* Floating ambient orbs */}
+      <div className="absolute top-16 left-10 w-72 h-72 bg-emerald-400/10 rounded-full blur-3xl" style={{ animation: 'pulse 6s ease-in-out infinite' }} />
+      <div className="absolute bottom-16 right-10 w-96 h-96 bg-teal-400/10 rounded-full blur-3xl" style={{ animation: 'pulse 6s ease-in-out 1.5s infinite' }} />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-emerald-300/5 rounded-full blur-3xl" />
+
+      {/* Card wrapper with animated gradient border */}
+      <div className="relative w-full max-w-md animate-fade-in-up">
+        {/* Gradient border layer */}
+        <div className="absolute -inset-[1.5px] rounded-2xl login-border-gradient" />
+
+        {/* Glassmorphism card */}
+        <Card className="relative w-full shadow-2xl !border-0 py-8 login-glass-card text-white">
+          <CardHeader className="items-center gap-4 pb-2">
+            {/* Logo with pulsing glow */}
+            <div className="login-logo-glow w-20 h-20 rounded-2xl bg-white/15 flex items-center justify-center overflow-hidden border border-white/25">
+              <img src="/nya-logo.png" alt="NYA Santé" className="w-16 h-16 object-contain drop-shadow-lg" />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="pin" className="text-sm font-medium">
-                <Lock className="inline w-4 h-4 mr-1 -mt-0.5" />
-                Code PIN
-              </Label>
-              <Input
-                id="pin"
-                type="password"
-                value={pin}
-                onChange={(e) => setPin(e.target.value)}
-                placeholder="•••••••"
-                className="h-11"
-              />
+            <div className="text-center animate-fade-in-up animate-delay-100">
+              <CardTitle className="text-xl font-bold text-white drop-shadow-sm">
+                Clinique Centrale NYA
+              </CardTitle>
+              <p className="text-sm text-emerald-100/80 mt-1">
+                Système de Gestion Hospitalière
+              </p>
             </div>
-            <Button
-              type="submit"
-              className="w-full h-11 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold"
-              disabled={loading}
-            >
-              {loading ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <Lock className="w-4 h-4 mr-2" />
-              )}
-              Se connecter
-            </Button>
-          </form>
-          <p className="text-xs text-center text-muted-foreground mt-6">
-            Compte démo : 655443322 / 123456 (Dr. Amina Nya)
-          </p>
-          <div className="flex items-start gap-2 mt-3 px-1">
-            <Info className="w-3.5 h-3.5 text-muted-foreground shrink-0 mt-0.5" />
-            <p className="text-[11px] text-muted-foreground leading-relaxed">
-              Votre administrateur doit créer votre compte avant de vous connecter.
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleLogin} className="space-y-5">
+              {/* Phone input */}
+              <div className="space-y-2 animate-fade-in-up animate-delay-200">
+                <Label htmlFor="phone" className="text-sm font-medium text-emerald-100">
+                  <Phone className="inline w-4 h-4 mr-1 -mt-0.5" />
+                  Téléphone
+                </Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="6XXXXXXXX"
+                  className="h-11 bg-white/10 border-white/20 text-white placeholder:text-white/35 focus:border-emerald-300/60 focus:bg-white/15"
+                />
+              </div>
+
+              {/* PIN input with toggle visibility */}
+              <div className="space-y-2 animate-fade-in-up animate-delay-300">
+                <Label htmlFor="pin" className="text-sm font-medium text-emerald-100">
+                  <Lock className="inline w-4 h-4 mr-1 -mt-0.5" />
+                  Code PIN
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="pin"
+                    type={showPin ? 'text' : 'password'}
+                    value={pin}
+                    onChange={(e) => setPin(e.target.value)}
+                    placeholder="•••••••"
+                    className="h-11 bg-white/10 border-white/20 text-white placeholder:text-white/35 focus:border-emerald-300/60 focus:bg-white/15 pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPin(!showPin)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/80 transition-colors"
+                    tabIndex={-1}
+                    aria-label={showPin ? 'Masquer le PIN' : 'Afficher le PIN'}
+                  >
+                    {showPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Login button with gradient hover */}
+              <Button
+                type="submit"
+                className="w-full h-11 login-btn-gradient text-white font-semibold animate-fade-in-up animate-delay-400"
+                disabled={loading}
+              >
+                {loading ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Lock className="w-4 h-4 mr-2" />
+                )}
+                Se connecter
+              </Button>
+            </form>
+
+            {/* Forgot password */}
+            <div className="text-center mt-4 animate-fade-in-up animate-delay-400">
+              <button
+                type="button"
+                onClick={() => toast.info('Contactez votre administrateur')}
+                className="text-sm text-emerald-200/60 hover:text-white/90 underline-offset-4 hover:underline transition-colors"
+              >
+                Mot de passe oublié ?
+              </button>
+            </div>
+
+            <p className="text-xs text-center text-emerald-200/50 mt-6">
+              Compte démo : 655443322 / 123456 (Dr. Amina Nya)
             </p>
-          </div>
-        </CardContent>
-      </Card>
+            <div className="flex items-start gap-2 mt-3 px-1">
+              <Info className="w-3.5 h-3.5 text-emerald-200/40 shrink-0 mt-0.5" />
+              <p className="text-[11px] text-emerald-200/40 leading-relaxed">
+                Votre administrateur doit créer votre compte avant de vous connecter.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Version text */}
+      <p className="absolute bottom-4 left-1/2 -translate-x-1/2 text-emerald-200/30 text-xs font-mono tracking-wider select-none">
+        v1.0 — PWA
+      </p>
     </div>
   )
 }
@@ -445,6 +498,7 @@ export default function HomePage() {
                 <h2 className="text-lg font-semibold">{viewTitle}</h2>
                 <div className="ml-auto flex items-center gap-2">
                   <PWAStatusBadge />
+                  <NotificationCenter />
                   <ThemeToggle />
                 </div>
               </div>
