@@ -1,0 +1,60 @@
+{
+  "name": "NYA Santé — Gestion Hospitalière",
+  "short_name": "NYA Santé",
+  "description": "Plateforme SaaS de gestion hospitalière nouvelle génération pour l'Afrique",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f0fdf4",
+  "theme_color": "#047857",
+  "orientation": "any",
+  "scope": "/",
+  "lang": "fr",
+  "dir": "ltr",
+  "categories": ["medical", "health", "business", "productivity"],
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-maskable-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Patients",
+      "url": "/?view=patients",
+      "description": "Gérer les patients"
+    },
+    {
+      "name": "Rendez-vous",
+      "url": "/?view=appointments",
+      "description": "Gérer les rendez-vous"
+    },
+    {
+      "name": "Ordonnances",
+      "url": "/?view=prescriptions",
+      "description": "Gérer les ordonnances"
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false
+}

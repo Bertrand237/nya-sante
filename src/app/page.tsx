@@ -7,6 +7,7 @@ import { ThemeProvider, useTheme } from 'next-themes'
 import { useAppStore } from '@/lib/store'
 import { getAllowedViews, getWelcomeMessage } from '@/lib/permissions'
 import { Toaster } from '@/components/ui/sonner'
+import { PWAInstallPrompt, PWAStatusBadge } from '@/components/PWAInstallPrompt'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -443,6 +444,7 @@ export default function HomePage() {
                 </Button>
                 <h2 className="text-lg font-semibold">{viewTitle}</h2>
                 <div className="ml-auto flex items-center gap-2">
+                  <PWAStatusBadge />
                   <ThemeToggle />
                 </div>
               </div>
@@ -456,6 +458,8 @@ export default function HomePage() {
 
           {/* Sonner Toaster */}
           <Toaster position="top-right" richColors closeButton />
+          {/* PWA Install Prompt */}
+          <PWAInstallPrompt />
         </div>
       )}
     </ThemeProvider>
