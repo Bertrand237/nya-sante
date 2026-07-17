@@ -6,18 +6,18 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
   super_admin: [
     'dashboard', 'patients', 'dme', 'departments', 'staff', 'appointments',
     'consultations', 'prescriptions', 'invoices', 'medications', 'labs',
-    'audit', 'settings', 'platforms',
+    'audit', 'settings', 'platforms', 'transfers',
   ],
   medecin_chef: [
     'dashboard', 'patients', 'dme', 'appointments',
-    'consultations', 'prescriptions', 'labs', 'medications',
+    'consultations', 'prescriptions', 'labs', 'medications', 'transfers',
   ],
   medecin: [
     'dashboard', 'patients', 'dme', 'appointments',
-    'consultations', 'prescriptions',
+    'consultations', 'prescriptions', 'transfers',
   ],
   infirmier: [
-    'dashboard', 'patients', 'dme', 'appointments', 'consultations',
+    'dashboard', 'patients', 'dme', 'appointments', 'consultations', 'transfers',
   ],
   laborantin: [
     'dashboard', 'labs',

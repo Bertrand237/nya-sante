@@ -17,7 +17,8 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
-import { Heart, Search, Plus, Loader2, ArrowUpDown, X } from 'lucide-react'
+import { Heart, Search, Plus, Loader2, ArrowUpDown, X, FileHeart } from 'lucide-react'
+import { useAppStore } from '@/lib/store'
 
 import { fmtDate } from '@/lib/helpers'
 import { BLOOD_TYPES } from '@/lib/constants'
@@ -35,6 +36,7 @@ export default function PatientsView() {
   const [sortDir, setSortDir] = useState('desc')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [saving, setSaving] = useState(false)
+  const { setSelectedPatientId, setCurrentView } = useAppStore()
 
   // Form state
   const [form, setForm] = useState({
@@ -114,6 +116,11 @@ export default function PatientsView() {
 
   const updateForm = (field: string, value: string) =>
     setForm((prev) => ({ ...prev, [field]: value }))
+
+  const openDossier = (p: any) => {
+    setSelectedPatientId(p.id)
+    setCurrentView('dme')
+  }
 
   return (
     <div className="space-y-6 animate-fade-in-up">
@@ -216,11 +223,12 @@ export default function PatientsView() {
                   <TableHead className="text-xs">Sexe</TableHead>
                   <TableHead className="text-xs">Groupe Sanguin</TableHead>
                   <TableHead className="text-xs">Date Création</TableHead>
+                  <TableHead className="text-xs w-12"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {patients.map((p: any) => (
-                  <TableRow key={p.id}>
+                  <TableRow key={p.id} className="cursor-pointer hover:bg-muted/50" onClick={() => openDossier(p)}>
                     <TableCell className="text-xs font-mono font-medium">{p.folderNumber}</TableCell>
                     <TableCell className="text-xs font-medium">{p.lastName}</TableCell>
                     <TableCell className="text-xs">{p.firstName}</TableCell>
@@ -228,11 +236,22 @@ export default function PatientsView() {
                     <TableCell className="text-xs">{p.gender === 'M' ? 'Masculin' : 'Féminin'}</TableCell>
                     <TableCell className="text-xs">{p.bloodType || '—'}</TableCell>
                     <TableCell className="text-xs">{fmtDate(p.createdAt)}</TableCell>
+                    <TableCell className="text-xs p-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                        onClick={(e) => { e.stopPropagation(); openDossier(p) }}
+                        title="Voir dossier"
+                      >
+                        <FileHeart className="w-3.5 h-3.5" />
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
                 {patients.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-16">
+                    <TableCell colSpan={8} className="text-center py-16">
                       <Heart className="w-12 h-12 mx-auto mb-3 text-muted-foreground/30" />
                       <p className="text-sm font-medium text-muted-foreground mb-1">Aucun patient enregistré</p>
                       <p className="text-xs text-muted-foreground/70 mb-4">Commencez par ajouter le premier patient</p>

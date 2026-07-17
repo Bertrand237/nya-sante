@@ -40,6 +40,7 @@ import {
   Shield,
   Cloud,
   Info,
+  Send,
 } from 'lucide-react'
 
 const DashboardView = dynamic(() => import('@/components/views/DashboardView'), { loading: () => <div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-4 border-emerald-200 border-t-emerald-600 rounded-full" /></div> })
@@ -56,6 +57,7 @@ const LaboView = dynamic(() => import('@/components/views/LaboView'), { ssr: fal
 const AuditView = dynamic(() => import('@/components/views/AuditView'), { ssr: false })
 const SettingsView = dynamic(() => import('@/components/views/SettingsView'), { ssr: false })
 const PlatformsView = dynamic(() => import('@/components/views/PlatformsView'), { ssr: false })
+const TransfersView = dynamic(() => import('@/components/views/TransfersView'), { ssr: false })
 
 const NAV_ITEMS = [
   { key: 'dashboard', label: 'Tableau de bord', icon: LayoutDashboard },
@@ -70,6 +72,7 @@ const NAV_ITEMS = [
   { key: 'medications', label: 'Pharmacie', icon: Pill },
   { key: 'labs', label: 'Laboratoire', icon: Microscope },
   { key: 'audit', label: "Journal d'audit", icon: Shield },
+  { key: 'transfers', label: 'Transferts', icon: Send },
   { key: 'settings', label: 'Paramètres', icon: Settings },
   { key: 'platforms', label: 'Plateformes', icon: Cloud },
 ]
@@ -189,7 +192,7 @@ function LoginScreen() {
 
 function SidebarContent({ onClose }: { onClose?: () => void }) {
   const { currentView, setCurrentView, user, setUser } = useAppStore()
-  const [badges, setBadges] = useState({ appointments: 0, invoices: 0, labs: 0 })
+  const [badges, setBadges] = useState({ appointments: 0, invoices: 0, labs: 0, transfers: 0 })
   const mountedRef = useRef(true)
 
   // Derive allowed navigation items from role
@@ -209,19 +212,22 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
     const fetchBadges = async () => {
       try {
         const today = new Date().toISOString().split('T')[0]
-        const [aptsRes, invRes, labsRes] = await Promise.all([
+        const [aptsRes, invRes, labsRes, transfersRes] = await Promise.all([
           fetch(`/api/appointments?status=en_attente&date=${today}`),
           fetch('/api/invoices?status=impayee'),
           fetch('/api/labs?status=en_attente'),
+          fetch('/api/transfers?direction=incoming'),
         ])
         if (!mountedRef.current) return
         const apts = await aptsRes.json()
         const invs = await invRes.json()
         const labList = await labsRes.json()
+        const transferList = await transfersRes.json()
         setBadges({
           appointments: Array.isArray(apts) ? apts.length : 0,
           invoices: Array.isArray(invs) ? invs.length : 0,
           labs: Array.isArray(labList) ? labList.length : 0,
+          transfers: Array.isArray(transferList) ? transferList.filter((t: any) => t.status === 'en_attente').length : 0,
         })
       } catch {
         // Silently fail — badges are non-critical
@@ -263,6 +269,13 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
       return (
         <span className="ml-auto flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-blue-500 text-white text-[10px] font-bold leading-none">
           {badges.labs > 99 ? '99+' : badges.labs}
+        </span>
+      )
+    }
+    if (key === 'transfers' && badges.transfers > 0) {
+      return (
+        <span className="ml-auto flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-purple-500 text-white text-[10px] font-bold leading-none">
+          {badges.transfers > 99 ? '99+' : badges.transfers}
         </span>
       )
     }
@@ -370,6 +383,7 @@ export default function HomePage() {
       case 'medications': return <MedicationsView />
       case 'labs': return <LaboView />
       case 'audit': return <AuditView />
+      case 'transfers': return <TransfersView />
       case 'settings': return <SettingsView />
       case 'platforms': return <PlatformsView />
       default: return <DashboardView />

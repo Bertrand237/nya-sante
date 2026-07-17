@@ -31,6 +31,10 @@ interface AppState {
   currentView: string
   setCurrentView: (view: string) => void
 
+  // Patient Dossier
+  selectedPatientId: string | null
+  setSelectedPatientId: (id: string | null) => void
+
   // Dashboard
   dashboardStats: DashboardStats | null
   setDashboardStats: (stats: DashboardStats) => void
@@ -58,6 +62,10 @@ export const useAppStore = create<AppState>((set) => ({
   currentView: 'dashboard',
   setCurrentView: (view) => set({ currentView: view }),
 
+  // Patient Dossier
+  selectedPatientId: null,
+  setSelectedPatientId: (id) => set({ selectedPatientId: id }),
+
   // Dashboard
   dashboardStats: null,
   setDashboardStats: (stats) => set({ dashboardStats: stats }),
@@ -72,7 +80,7 @@ export const useAppStore = create<AppState>((set) => ({
   sidebarOpen: true,
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
   toastMessage: null,
-  showToast: (message) => {
+  showToast: (message: string) => {
     set({ toastMessage: message })
     setTimeout(() => set({ toastMessage: null }), 3000)
   },

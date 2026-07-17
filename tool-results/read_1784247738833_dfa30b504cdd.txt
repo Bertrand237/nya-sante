@@ -1,0 +1,901 @@
+     1→'use client'
+     2→
+     3→import { useState, useEffect, useCallback } from 'react'
+     4→import { toast } from 'sonner'
+     5→import { useAppStore } from '@/lib/store'
+     6→import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+     7→import { Input } from '@/components/ui/input'
+     8→import { Button } from '@/components/ui/button'
+     9→import { Badge } from '@/components/ui/badge'
+    10→import { Label } from '@/components/ui/label'
+    11→import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+    12→import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+    13→import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+    14→import { Textarea } from '@/components/ui/textarea'
+    15→import { CardSkeleton } from '@/components/ui/skeletons'
+    16→import {
+    17→  Heart, Search, ArrowLeft, UserCircle, Stethoscope, Pill, Receipt,
+    18→  Activity, Microscope, Send, Loader2, FileText, ChevronRight,
+    19→  AlertCircle, Building2,
+    20→} from 'lucide-react'
+    21→
+    22→import { fmtCurrency, fmtDate, fmtDateTime } from '@/lib/helpers'
+    23→import { STATUS_INVOICE, STATUS_LAB } from '@/lib/constants'
+    24→
+    25→type TabKey = 'infos' | 'consultations' | 'ordonnances' | 'laboratoire' | 'factures' | 'constantes'
+    26→
+    27→const TABS: { key: TabKey; label: string; icon: React.ElementType }[] = [
+    28→  { key: 'infos', label: 'Informations', icon: UserCircle },
+    29→  { key: 'consultations', label: 'Consultations', icon: Stethoscope },
+    30→  { key: 'ordonnances', label: 'Ordonnances', icon: Pill },
+    31→  { key: 'laboratoire', label: 'Laboratoire', icon: Microscope },
+    32→  { key: 'factures', label: 'Factures', icon: Receipt },
+    33→  { key: 'constantes', label: 'Constantes', icon: Activity },
+    34→]
+    35→
+    36→export default function DmeView() {
+    37→  const { selectedPatientId, setSelectedPatientId, setCurrentView, user } = useAppStore()
+    38→
+    39→  // Mode A state
+    40→  const [searchQuery, setSearchQuery] = useState('')
+    41→  const [searchResults, setSearchResults] = useState<any[]>([])
+    42→  const [loadingList, setLoadingList] = useState(false)
+    43→  const [searching, setSearching] = useState(false)
+    44→
+    45→  // Mode B state
+    46→  const [patient, setPatient] = useState<any>(null)
+    47→  const [loadingDossier, setLoadingDossier] = useState(false)
+    48→  const [activeTab, setActiveTab] = useState<TabKey>('infos')
+    49→  const [expandedConsultation, setExpandedConsultation] = useState<string | null>(null)
+    50→
+    51→  // Transfer dialog state
+    52→  const [transferOpen, setTransferOpen] = useState(false)
+    53→  const [hospitals, setHospitals] = useState<any[]>([])
+    54→  const [transferReason, setTransferReason] = useState('')
+    55→  const [transferHospitalId, setTransferHospitalId] = useState('')
+    56→  const [transferSending, setTransferSending] = useState(false)
+    57→
+    58→  // ─── Check store on mount ───
+    59→  useEffect(() => {
+    60→    if (selectedPatientId) {
+    61→      loadPatientDossier(selectedPatientId)
+    62→      setSelectedPatientId(null)
+    63→    }
+    64→  }, [])
+    65→
+    66→  // ─── Mode A: Search ───
+    67→  const loadPatientList = useCallback(async () => {
+    68→    setLoadingList(true)
+    69→    try {
+    70→      const res = await fetch(`/api/patients?q=${encodeURIComponent(searchQuery)}&limit=50`)
+    71→      const data = await res.json()
+    72→      setSearchResults(data.data || [])
+    73→    } catch {
+    74→      setSearchResults([])
+    75→    } finally {
+    76→      setLoadingList(false)
+    77→    }
+    78→  }, [searchQuery])
+    79→
+    80→  useEffect(() => {
+    81→    if (searchQuery.length >= 2 && !patient) {
+    82→      const timer = setTimeout(loadPatientList, 300)
+    83→      return () => clearTimeout(timer)
+    84→    } else if (searchQuery.length < 2) {
+    85→      setSearchResults([])
+    86→    }
+    87→  }, [searchQuery, loadPatientList, patient])
+    88→
+    89→  const handleSearch = (val: string) => {
+    90→    if (patient) {
+    91→      // If in dossier mode and user types in search, go back to list
+    92→      setPatient(null)
+    93→      setActiveTab('infos')
+    94→    }
+    95→    setSearchQuery(val)
+    96→  }
+    97→
+    98→  // ─── Load dossier ───
+    99→  const loadPatientDossier = async (id: string) => {
+   100→    setLoadingDossier(true)
+   101→    setPatient(null)
+   102→    try {
+   103→      const res = await fetch(`/api/patients/${id}`)
+   104→      if (res.ok) {
+   105→        const data = await res.json()
+   106→        setPatient(data)
+   107→        setActiveTab('infos')
+   108→        setSearchQuery(`${data.firstName} ${data.lastName} (${data.folderNumber})`)
+   109→      } else {
+   110→        toast.error('Patient non trouvé')
+   111→      }
+   112→    } catch {
+   113→      toast.error('Erreur de chargement du dossier')
+   114→    } finally {
+   115→      setLoadingDossier(false)
+   116→    }
+   117→  }
+   118→
+   119→  const openDossier = (p: any) => {
+   120→    loadPatientDossier(p.id)
+   121→  }
+   122→
+   123→  const goBack = () => {
+   124→    setPatient(null)
+   125→    setActiveTab('infos')
+   126→    setSearchQuery('')
+   127→  }
+   128→
+   129→  // ─── Transfer ───
+   130→  const openTransferDialog = async () => {
+   131→    setTransferOpen(true)
+   132→    setTransferReason('')
+   133→    setTransferHospitalId('')
+   134→    try {
+   135→      const res = await fetch('/api/hospitals')
+   136→      if (res.ok) setHospitals(await res.json())
+   137→    } catch { /* ignore */ }
+   138→  }
+   139→
+   140→  const sendTransfer = async () => {
+   141→    if (!transferHospitalId || !patient) return
+   142→    setTransferSending(true)
+   143→    try {
+   144→      const res = await fetch('/api/transfers', {
+   145→        method: 'POST',
+   146→        headers: { 'Content-Type': 'application/json' },
+   147→        body: JSON.stringify({
+   148→          patientId: patient.id,
+   149→          toHospitalId: transferHospitalId,
+   150→          reason: transferReason,
+   151→          requestedBy: user?.id,
+   152→        }),
+   153→      })
+   154→      if (res.ok) {
+   155→        toast.success('Demande de transfert envoyée avec succès')
+   156→        setTransferOpen(false)
+   157→      } else {
+   158→        const data = await res.json()
+   159→        toast.error(data.error || 'Erreur lors de l\'envoi')
+   160→      }
+   161→    } catch {
+   162→      toast.error('Erreur serveur')
+   163→    } finally {
+   164→      setTransferSending(false)
+   165→    }
+   166→  }
+   167→
+   168→  // ─── Helpers ───
+   169→  const getAge = (dob: string | null) => {
+   170→    if (!dob) return '—'
+   171→    const d = new Date(dob)
+   172→    const now = new Date()
+   173→    let age = now.getFullYear() - d.getFullYear()
+   174→    if (now.getMonth() < d.getMonth() || (now.getMonth() === d.getMonth() && now.getDate() < d.getDate())) age--
+   175→    return `${age} ans`
+   176→  }
+   177→
+   178→  const getLastVitals = () => {
+   179→    if (!patient?.vitals?.length) return null
+   180→    return patient.vitals[0]
+   181→  }
+   182→
+   183→  // ─── Render: Mode A (Patient List) ───
+   184→  if (!patient && !loadingDossier) {
+   185→    return (
+   186→      <div className="space-y-6 animate-fade-in-up">
+   187→        <div className="flex items-center gap-3">
+   188→          {/* Hidden back button in list mode */}
+   189→          <Button variant="ghost" size="icon" className="invisible">
+   190→            <ArrowLeft className="w-4 h-4" />
+   191→          </Button>
+   192→          <div>
+   193→            <h1 className="text-2xl font-bold">Dossier Médical Électronique</h1>
+   194→            <p className="text-muted-foreground text-sm mt-1">
+   195→              Rechercher un patient pour accéder à son dossier complet
+   196→            </p>
+   197→          </div>
+   198→        </div>
+   199→
+   200→        <div className="relative max-w-lg">
+   201→          <div className="relative">
+   202→            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+   203→            <Input
+   204→              placeholder="Rechercher par nom ou numéro de dossier..."
+   205→              value={searchQuery}
+   206→              onChange={(e) => handleSearch(e.target.value)}
+   207→              className="pl-9 pr-8"
+   208→            />
+   209→            {searching && (
+   210→              <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />
+   211→            )}
+   212→          </div>
+   213→        </div>
+   214→
+   215→        {loadingList && <CardSkeleton />}
+   216→
+   217→        {!loadingList && searchQuery.length >= 2 && (
+   218→          <Card className="rounded-xl shadow-sm">
+   219→            <CardContent className="p-0">
+   220→              <div className="overflow-x-auto">
+   221→                <Table>
+   222→                  <TableHeader>
+   223→                    <TableRow>
+   224→                      <TableHead className="text-xs">N° Dossier</TableHead>
+   225→                      <TableHead className="text-xs">Nom</TableHead>
+   226→                      <TableHead className="text-xs hidden sm:table-cell">Téléphone</TableHead>
+   227→                      <TableHead className="text-xs hidden md:table-cell">Sexe</TableHead>
+   228→                      <TableHead className="text-xs hidden lg:table-cell">Groupe Sanguin</TableHead>
+   229→                      <TableHead className="text-xs hidden md:table-cell">Date Création</TableHead>
+   230→                    </TableRow>
+   231→                  </TableHeader>
+   232→                  <TableBody>
+   233→                    {searchResults.length === 0 && (
+   234→                      <TableRow>
+   235→                        <TableCell colSpan={6} className="text-center py-12">
+   236→                          <Search className="w-10 h-10 mx-auto mb-2 text-muted-foreground/30" />
+   237→                          <p className="text-sm text-muted-foreground">Aucun patient trouvé</p>
+   238→                        </TableCell>
+   239→                      </TableRow>
+   240→                    )}
+   241→                    {searchResults.map((p: any) => (
+   242→                      <TableRow
+   243→                        key={p.id}
+   244→                        className="cursor-pointer hover:bg-muted/50"
+   245→                        onClick={() => openDossier(p)}
+   246→                      >
+   247→                        <TableCell className="text-xs font-mono font-medium">{p.folderNumber}</TableCell>
+   248→                        <TableCell className="text-xs font-medium">
+   249→                          {p.lastName} {p.firstName}
+   250→                        </TableCell>
+   251→                        <TableCell className="text-xs hidden sm:table-cell">{p.phone}</TableCell>
+   252→                        <TableCell className="text-xs hidden md:table-cell">
+   253→                          {p.gender === 'M' ? 'Masculin' : 'Féminin'}
+   254→                        </TableCell>
+   255→                        <TableCell className="text-xs hidden lg:table-cell">{p.bloodType || '—'}</TableCell>
+   256→                        <TableCell className="text-xs hidden md:table-cell">{fmtDate(p.createdAt)}</TableCell>
+   257→                      </TableRow>
+   258→                    ))}
+   259→                  </TableBody>
+   260→                </Table>
+   261→              </div>
+   262→            </CardContent>
+   263→          </Card>
+   264→        )}
+   265→
+   266→        {!loadingList && searchQuery.length < 2 && (
+   267→          <div className="text-center py-16">
+   268→            <Heart className="w-16 h-16 mx-auto mb-4 text-emerald-200" />
+   269→            <p className="text-muted-foreground text-sm">
+   270→              Saisissez au moins 2 caractères pour rechercher un patient
+   271→            </p>
+   272→          </div>
+   273→        )}
+   274→      </div>
+   275→    )
+   276→  }
+   277→
+   278→  // ─── Render: Loading dossier ───
+   279→  if (loadingDossier) {
+   280→    return (
+   281→      <div className="space-y-6 animate-fade-in-up">
+   282→        <div className="flex items-center gap-3">
+   283→          <Button variant="ghost" size="icon" onClick={goBack}>
+   284→            <ArrowLeft className="w-4 h-4" />
+   285→          </Button>
+   286→          <div>
+   287→            <h1 className="text-2xl font-bold">Dossier Médical Électronique</h1>
+   288→          </div>
+   289→        </div>
+   290→        <CardSkeleton />
+   291→        <CardSkeleton />
+   292→      </div>
+   293→    )
+   294→  }
+   295→
+   296→  // ─── Render: Mode B (Full Dossier) ───
+   297→  const lastVitals = getLastVitals()
+   298→  const totalRemaining = (patient?.invoices || []).reduce(
+   299→    (sum: number, inv: any) => sum + (inv.totalAmount - inv.paidAmount),
+   300→    0
+   301→  )
+   302→
+   303→  return (
+   304→    <div className="space-y-6 animate-fade-in-up">
+   305→      {/* Header */}
+   306→      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+   307→        <div className="flex items-center gap-3">
+   308→          <Button variant="ghost" size="icon" onClick={goBack}>
+   309→            <ArrowLeft className="w-4 h-4" />
+   310→          </Button>
+   311→          <div>
+   312→            <h1 className="text-2xl font-bold">
+   313→              {patient.firstName} {patient.lastName}
+   314→            </h1>
+   315→            <p className="text-muted-foreground text-sm mt-0.5 font-mono">
+   316→              {patient.folderNumber}
+   317→            </p>
+   318→          </div>
+   319→        </div>
+   320→        <Button
+   321→          variant="outline"
+   322→          className="border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+   323→          onClick={openTransferDialog}
+   324→        >
+   325→          <Send className="w-4 h-4 mr-2" />
+   326→          Transférer
+   327→        </Button>
+   328→      </div>
+   329→
+   330→      {/* Tab Bar */}
+   331→      <div className="flex gap-1 overflow-x-auto pb-1 border-b">
+   332→        {TABS.map((tab) => {
+   333→          const Icon = tab.icon
+   334→          const isActive = activeTab === tab.key
+   335→          return (
+   336→            <button
+   337→              key={tab.key}
+   338→              onClick={() => setActiveTab(tab.key)}
+   339→              className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors border-b-2 -mb-px ${
+   340→                isActive
+   341→                  ? 'border-emerald-600 text-emerald-700'
+   342→                  : 'border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/30'
+   343→              }`}
+   344→            >
+   345→              <Icon className="w-3.5 h-3.5" />
+   346→              {tab.label}
+   347→            </button>
+   348→          )
+   349→        })}
+   350→      </div>
+   351→
+   352→      {/* Tab Content */}
+   353→      <div>
+   354→        {/* ─── Tab: Informations ─── */}
+   355→        {activeTab === 'infos' && (
+   356→          <Card>
+   357→            <CardHeader className="pb-3">
+   358→              <CardTitle className="text-base flex items-center gap-2">
+   359→                <UserCircle className="w-4 h-4 text-sky-600" />
+   360→                Informations Personnelles
+   361→              </CardTitle>
+   362→            </CardHeader>
+   363→            <CardContent>
+   364→              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+   365→                <div>
+   366→                  <p className="text-xs text-muted-foreground">Nom complet</p>
+   367→                  <p className="text-sm font-medium">{patient.firstName} {patient.lastName}</p>
+   368→                </div>
+   369→                <div>
+   370→                  <p className="text-xs text-muted-foreground">N° Dossier</p>
+   371→                  <p className="text-sm font-mono font-medium">{patient.folderNumber}</p>
+   372→                </div>
+   373→                <div>
+   374→                  <p className="text-xs text-muted-foreground">Âge</p>
+   375→                  <p className="text-sm font-medium">{getAge(patient.dateOfBirth)}</p>
+   376→                </div>
+   377→                <div>
+   378→                  <p className="text-xs text-muted-foreground">Sexe</p>
+   379→                  <p className="text-sm font-medium">{patient.gender === 'M' ? 'Masculin' : 'Féminin'}</p>
+   380→                </div>
+   381→                <div>
+   382→                  <p className="text-xs text-muted-foreground">Groupe Sanguin</p>
+   383→                  <p className="text-sm font-medium">{patient.bloodType || '—'}</p>
+   384→                </div>
+   385→                <div>
+   386→                  <p className="text-xs text-muted-foreground">Téléphone</p>
+   387→                  <p className="text-sm font-medium">{patient.phone}</p>
+   388→                </div>
+   389→                <div>
+   390→                  <p className="text-xs text-muted-foreground">Adresse</p>
+   391→                  <p className="text-sm font-medium">{patient.address || '—'}{patient.city ? `, ${patient.city}` : ''}</p>
+   392→                </div>
+   393→                <div>
+   394→                  <p className="text-xs text-muted-foreground">Assurance</p>
+   395→                  <p className="text-sm font-medium">
+   396→                    {patient.insuranceProvider || '—'}{' '}
+   397→                    {patient.insuranceNumber ? `(${patient.insuranceNumber})` : ''}
+   398→                  </p>
+   399→                </div>
+   400→              </div>
+   401→              {(patient.allergies || patient.medicalHistory || patient.emergencyContact) && (
+   402→                <div className="mt-4 pt-4 border-t space-y-2">
+   403→                  {patient.allergies && (
+   404→                    <div>
+   405→                      <p className="text-xs text-muted-foreground">Allergies</p>
+   406→                      <p className="text-sm font-medium text-red-700">{patient.allergies}</p>
+   407→                    </div>
+   408→                  )}
+   409→                  {patient.medicalHistory && (
+   410→                    <div>
+   411→                      <p className="text-xs text-muted-foreground">Antécédents médicaux</p>
+   412→                      <p className="text-sm">{patient.medicalHistory}</p>
+   413→                    </div>
+   414→                  )}
+   415→                  {patient.emergencyContact && (
+   416→                    <div>
+   417→                      <p className="text-xs text-muted-foreground">Contact d&apos;urgence</p>
+   418→                      <p className="text-sm font-medium">
+   419→                        {patient.emergencyContact}{' '}
+   420→                        {patient.emergencyPhone && (
+   421→                          <span className="text-muted-foreground">— {patient.emergencyPhone}</span>
+   422→                        )}
+   423→                      </p>
+   424→                    </div>
+   425→                  )}
+   426→                </div>
+   427→              )}
+   428→            </CardContent>
+   429→          </Card>
+   430→        )}
+   431→
+   432→        {/* ─── Tab: Consultations ─── */}
+   433→        {activeTab === 'consultations' && (
+   434→          <Card>
+   435→            <CardHeader className="pb-3">
+   436→              <CardTitle className="text-base flex items-center gap-2">
+   437→                <Stethoscope className="w-4 h-4 text-emerald-600" />
+   438→                Consultations ({patient.consultations?.length || 0})
+   439→              </CardTitle>
+   440→            </CardHeader>
+   441→            <CardContent className="p-0">
+   442→              {(!patient.consultations || patient.consultations.length === 0) ? (
+   443→                <div className="text-center py-12">
+   444→                  <Stethoscope className="w-10 h-10 mx-auto mb-2 text-muted-foreground/30" />
+   445→                  <p className="text-sm text-muted-foreground">Aucune consultation</p>
+   446→                </div>
+   447→              ) : (
+   448→                <div className="overflow-x-auto">
+   449→                  <Table>
+   450→                    <TableHeader>
+   451→                      <TableRow>
+   452→                        <TableHead className="text-xs w-8"></TableHead>
+   453→                        <TableHead className="text-xs">Date</TableHead>
+   454→                        <TableHead className="text-xs hidden sm:table-cell">Médecin</TableHead>
+   455→                        <TableHead className="text-xs">Motif</TableHead>
+   456→                        <TableHead className="text-xs hidden md:table-cell">Diagnostic</TableHead>
+   457→                        <TableHead className="text-xs">Statut</TableHead>
+   458→                      </TableRow>
+   459→                    </TableHeader>
+   460→                    <TableBody>
+   461→                      {patient.consultations.map((c: any) => {
+   462→                        const isExpanded = expandedConsultation === c.id
+   463→                        return (
+   464→                          <>
+   465→                            <TableRow
+   466→                              key={c.id}
+   467→                              className="cursor-pointer hover:bg-muted/50"
+   468→                              onClick={() => setExpandedConsultation(isExpanded ? null : c.id)}
+   469→                            >
+   470→                              <TableCell className="text-xs p-2 w-8">
+   471→                                <ChevronRight className={`w-3.5 h-3.5 text-muted-foreground transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+   472→                              </TableCell>
+   473→                              <TableCell className="text-xs">{fmtDateTime(c.createdAt)}</TableCell>
+   474→                              <TableCell className="text-xs hidden sm:table-cell">
+   475→                                Dr. {c.staff?.firstName} {c.staff?.lastName}
+   476→                              </TableCell>
+   477→                              <TableCell className="text-xs max-w-[150px] truncate">{c.chiefComplaint || '—'}</TableCell>
+   478→                              <TableCell className="text-xs max-w-[150px] truncate hidden md:table-cell">{c.diagnosis || '—'}</TableCell>
+   479→                              <TableCell className="text-xs">
+   480→                                <Badge variant="outline" className={
+   481→                                  c.status === 'termine' ? 'bg-emerald-100 text-emerald-800 border-emerald-300' :
+   482→                                  c.status === 'en_cours' ? 'bg-orange-100 text-orange-800 border-orange-300' :
+   483→                                  'bg-blue-100 text-blue-800 border-blue-300'
+   484→                                }>
+   485→                                  {c.status === 'termine' ? 'Terminée' : c.status === 'en_cours' ? 'En cours' : 'Planifiée'}
+   486→                                </Badge>
+   487→                              </TableCell>
+   488→                            </TableRow>
+   489→                            {isExpanded && (
+   490→                              <TableRow key={`${c.id}-detail`}>
+   491→                                <TableCell colSpan={6} className="bg-muted/30 p-4">
+   492→                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+   493→                                    {c.historyOfPresentIllness && (
+   494→                                      <div>
+   495→                                        <p className="text-xs font-medium text-muted-foreground mb-1">Histoire de la maladie</p>
+   496→                                        <p className="text-sm whitespace-pre-wrap">{c.historyOfPresentIllness}</p>
+   497→                                      </div>
+   498→                                    )}
+   499→                                    {c.physicalExam && (
+   500→                                      <div>
+   501→                                        <p className="text-xs font-medium text-muted-foreground mb-1">Examen physique</p>
+   502→                                        <p className="text-sm whitespace-pre-wrap">{c.physicalExam}</p>
+   503→                                      </div>
+   504→                                    )}
+   505→                                    {c.diagnosis && (
+   506→                                      <div>
+   507→                                        <p className="text-xs font-medium text-muted-foreground mb-1">Diagnostic</p>
+   508→                                        <p className="text-sm font-medium">{c.diagnosis}</p>
+   509→                                      </div>
+   510→                                    )}
+   511→                                    {c.plan && (
+   512→                                      <div>
+   513→                                        <p className="text-xs font-medium text-muted-foreground mb-1">Plan de traitement</p>
+   514→                                        <p className="text-sm whitespace-pre-wrap">{c.plan}</p>
+   515→                                      </div>
+   516→                                    )}
+   517→                                    {c.notes && (
+   518→                                      <div className="md:col-span-2">
+   519→                                        <p className="text-xs font-medium text-muted-foreground mb-1">Notes</p>
+   520→                                        <p className="text-sm whitespace-pre-wrap">{c.notes}</p>
+   521→                                      </div>
+   522→                                    )}
+   523→                                  </div>
+   524→                                </TableCell>
+   525→                              </TableRow>
+   526→                            )}
+   527→                          </>
+   528→                        )
+   529→                      })}
+   530→                    </TableBody>
+   531→                  </Table>
+   532→                </div>
+   533→              )}
+   534→            </CardContent>
+   535→          </Card>
+   536→        )}
+   537→
+   538→        {/* ─── Tab: Ordonnances ─── */}
+   539→        {activeTab === 'ordonnances' && (
+   540→          <div className="space-y-4">
+   541→            {(!patient.prescriptions || patient.prescriptions.length === 0) ? (
+   542→              <Card>
+   543→                <CardContent className="text-center py-12">
+   544→                  <Pill className="w-10 h-10 mx-auto mb-2 text-muted-foreground/30" />
+   545→                  <p className="text-sm text-muted-foreground">Aucune ordonnance</p>
+   546→                </CardContent>
+   547→              </Card>
+   548→            ) : (
+   549→              patient.prescriptions.map((rx: any) => (
+   550→                <Card key={rx.id}>
+   551→                  <CardHeader className="pb-3">
+   552→                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+   553→                      <CardTitle className="text-sm flex items-center gap-2">
+   554→                        <Pill className="w-4 h-4 text-emerald-600" />
+   555→                        <FileText className="w-3.5 h-3.5 text-muted-foreground" />
+   556→                        Ordonnance du {fmtDateTime(rx.createdAt)}
+   557→                      </CardTitle>
+   558→                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+   559→                        <span>Dr. {rx.staff?.firstName} {rx.staff?.lastName}</span>
+   560→                        {rx.consultation?.diagnosis && (
+   561→                          <Badge variant="outline" className="text-xs bg-sky-50 text-sky-700 border-sky-200">
+   562→                            {rx.consultation.diagnosis}
+   563→                          </Badge>
+   564→                        )}
+   565→                      </div>
+   566→                    </div>
+   567→                  </CardHeader>
+   568→                  <CardContent className="p-0">
+   569→                    {rx.items && rx.items.length > 0 ? (
+   570→                      <div className="overflow-x-auto">
+   571→                        <Table>
+   572→                          <TableHeader>
+   573→                            <TableRow>
+   574→                              <TableHead className="text-xs">Médicament</TableHead>
+   575→                              <TableHead className="text-xs">Posologie</TableHead>
+   576→                              <TableHead className="text-xs hidden sm:table-cell">Fréquence</TableHead>
+   577→                              <TableHead className="text-xs hidden md:table-cell">Durée</TableHead>
+   578→                              <TableHead className="text-xs hidden lg:table-cell">Instructions</TableHead>
+   579→                            </TableRow>
+   580→                          </TableHeader>
+   581→                          <TableBody>
+   582→                            {rx.items.map((item: any, i: number) => (
+   583→                              <TableRow key={i}>
+   584→                                <TableCell className="text-xs font-medium">{item.medicationName}</TableCell>
+   585→                                <TableCell className="text-xs">{item.dosage}</TableCell>
+   586→                                <TableCell className="text-xs hidden sm:table-cell">{item.frequency}</TableCell>
+   587→                                <TableCell className="text-xs hidden md:table-cell">{item.duration}</TableCell>
+   588→                                <TableCell className="text-xs text-muted-foreground hidden lg:table-cell">{item.instructions || '—'}</TableCell>
+   589→                              </TableRow>
+   590→                            ))}
+   591→                          </TableBody>
+   592→                        </Table>
+   593→                      </div>
+   594→                    ) : (
+   595→                      <div className="text-center py-4 text-xs text-muted-foreground">
+   596→                        Aucun médicament détaillé
+   597→                      </div>
+   598→                    )}
+   599→                  </CardContent>
+   600→                </Card>
+   601→              ))
+   602→            )}
+   603→          </div>
+   604→        )}
+   605→
+   606→        {/* ─── Tab: Laboratoire ─── */}
+   607→        {activeTab === 'laboratoire' && (
+   608→          <Card>
+   609→            <CardHeader className="pb-3">
+   610→              <CardTitle className="text-base flex items-center gap-2">
+   611→                <Microscope className="w-4 h-4 text-emerald-600" />
+   612→                Examens de Laboratoire ({patient.labRequests?.length || 0})
+   613→              </CardTitle>
+   614→            </CardHeader>
+   615→            <CardContent className="p-0">
+   616→              {(!patient.labRequests || patient.labRequests.length === 0) ? (
+   617→                <div className="text-center py-12">
+   618→                  <Microscope className="w-10 h-10 mx-auto mb-2 text-muted-foreground/30" />
+   619→                  <p className="text-sm text-muted-foreground">Aucun examen de laboratoire</p>
+   620→                </div>
+   621→              ) : (
+   622→                <div className="overflow-x-auto">
+   623→                  <Table>
+   624→                    <TableHeader>
+   625→                      <TableRow>
+   626→                        <TableHead className="text-xs">Date</TableHead>
+   627→                        <TableHead className="text-xs">Type d&apos;analyse</TableHead>
+   628→                        <TableHead className="text-xs">Statut</TableHead>
+   629→                        <TableHead className="text-xs hidden sm:table-cell">Résultats</TableHead>
+   630→                        <TableHead className="text-xs hidden md:table-cell">Médecin</TableHead>
+   631→                      </TableRow>
+   632→                    </TableHeader>
+   633→                    <TableBody>
+   634→                      {patient.labRequests.map((lab: any) => {
+   635→                        const st = STATUS_LAB[lab.status] || STATUS_LAB.en_attente
+   636→                        return (
+   637→                          <TableRow key={lab.id}>
+   638→                            <TableCell className="text-xs">{fmtDateTime(lab.requestedAt)}</TableCell>
+   639→                            <TableCell className="text-xs font-medium">{lab.analysisType}</TableCell>
+   640→                            <TableCell className="text-xs">
+   641→                              <Badge variant="outline" className={st.className}>{st.label}</Badge>
+   642→                            </TableCell>
+   643→                            <TableCell className="text-xs max-w-[200px] truncate hidden sm:table-cell">
+   644→                              {lab.results || '—'}
+   645→                            </TableCell>
+   646→                            <TableCell className="text-xs hidden md:table-cell">
+   647→                              Dr. {lab.staff?.firstName} {lab.staff?.lastName}
+   648→                            </TableCell>
+   649→                          </TableRow>
+   650→                        )
+   651→                      })}
+   652→                    </TableBody>
+   653→                  </Table>
+   654→                </div>
+   655→              )}
+   656→            </CardContent>
+   657→          </Card>
+   658→        )}
+   659→
+   660→        {/* ─── Tab: Factures ─── */}
+   661→        {activeTab === 'factures' && (
+   662→          <Card>
+   663→            <CardHeader className="pb-3">
+   664→              <CardTitle className="text-base flex items-center gap-2">
+   665→                <Receipt className="w-4 h-4 text-emerald-600" />
+   666→                Factures ({patient.invoices?.length || 0})
+   667→              </CardTitle>
+   668→            </CardHeader>
+   669→            <CardContent className="p-0">
+   670→              {(!patient.invoices || patient.invoices.length === 0) ? (
+   671→                <div className="text-center py-12">
+   672→                  <Receipt className="w-10 h-10 mx-auto mb-2 text-muted-foreground/30" />
+   673→                  <p className="text-sm text-muted-foreground">Aucune facture</p>
+   674→                </div>
+   675→              ) : (
+   676→                <>
+   677→                  <div className="overflow-x-auto">
+   678→                    <Table>
+   679→                      <TableHeader>
+   680→                        <TableRow>
+   681→                          <TableHead className="text-xs">N° Facture</TableHead>
+   682→                          <TableHead className="text-xs">Montant</TableHead>
+   683→                          <TableHead className="text-xs hidden sm:table-cell">Payé</TableHead>
+   684→                          <TableHead className="text-xs">Statut</TableHead>
+   685→                          <TableHead className="text-xs hidden md:table-cell">Date</TableHead>
+   686→                        </TableRow>
+   687→                      </TableHeader>
+   688→                      <TableBody>
+   689→                        {patient.invoices.map((inv: any) => {
+   690→                          const st = STATUS_INVOICE[inv.status] || STATUS_INVOICE.impayee
+   691→                          return (
+   692→                            <TableRow key={inv.id}>
+   693→                              <TableCell className="text-xs font-mono">{inv.invoiceNumber}</TableCell>
+   694→                              <TableCell className="text-xs font-medium">{fmtCurrency(inv.totalAmount)}</TableCell>
+   695→                              <TableCell className="text-xs hidden sm:table-cell">{fmtCurrency(inv.paidAmount)}</TableCell>
+   696→                              <TableCell className="text-xs">
+   697→                                <Badge variant="outline" className={st.className}>{st.label}</Badge>
+   698→                              </TableCell>
+   699→                              <TableCell className="text-xs hidden md:table-cell">{fmtDate(inv.createdAt)}</TableCell>
+   700→                            </TableRow>
+   701→                          )
+   702→                        })}
+   703→                      </TableBody>
+   704→                    </Table>
+   705→                  </div>
+   706→                  {totalRemaining > 0 && (
+   707→                    <div className="px-4 py-3 border-t bg-red-50 flex items-center justify-between">
+   708→                      <span className="text-sm font-medium text-red-700">Total restant à payer</span>
+   709→                      <span className="text-sm font-bold text-red-700">{fmtCurrency(totalRemaining)}</span>
+   710→                    </div>
+   711→                  )}
+   712→                </>
+   713→              )}
+   714→            </CardContent>
+   715→          </Card>
+   716→        )}
+   717→
+   718→        {/* ─── Tab: Constantes ─── */}
+   719→        {activeTab === 'constantes' && (
+   720→          <div className="space-y-4">
+   721→            {/* Last vitals highlight card */}
+   722→            {lastVitals && (
+   723→              <Card className="border-emerald-200 bg-emerald-50/50">
+   724→                <CardHeader className="pb-3">
+   725→                  <CardTitle className="text-sm flex items-center gap-2">
+   726→                    <Activity className="w-4 h-4 text-emerald-600" />
+   727→                    Dernières constantes — {fmtDateTime(lastVitals.createdAt)}
+   728→                  </CardTitle>
+   729→                </CardHeader>
+   730→                <CardContent>
+   731→                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+   732→                    <div className="text-center">
+   733→                      <p className="text-xs text-muted-foreground">Poids</p>
+   734→                      <p className="text-lg font-bold text-emerald-700">
+   735→                        {lastVitals.weight != null ? `${lastVitals.weight}` : '—'}
+   736→                        <span className="text-xs font-normal text-muted-foreground ml-0.5">kg</span>
+   737→                      </p>
+   738→                    </div>
+   739→                    <div className="text-center">
+   740→                      <p className="text-xs text-muted-foreground">Taille</p>
+   741→                      <p className="text-lg font-bold text-emerald-700">
+   742→                        {lastVitals.height != null ? `${lastVitals.height}` : '—'}
+   743→                        <span className="text-xs font-normal text-muted-foreground ml-0.5">cm</span>
+   744→                      </p>
+   745→                    </div>
+   746→                    <div className="text-center">
+   747→                      <p className="text-xs text-muted-foreground">Température</p>
+   748→                      <p className="text-lg font-bold text-emerald-700">
+   749→                        {lastVitals.temperature != null ? `${lastVitals.temperature}` : '—'}
+   750→                        <span className="text-xs font-normal text-muted-foreground ml-0.5">°C</span>
+   751→                      </p>
+   752→                    </div>
+   753→                    <div className="text-center">
+   754→                      <p className="text-xs text-muted-foreground">TA</p>
+   755→                      <p className="text-lg font-bold text-emerald-700">
+   756→                        {lastVitals.bloodPressureSystolic != null
+   757→                          ? `${lastVitals.bloodPressureSystolic}/${lastVitals.bloodPressureDiastolic}`
+   758→                          : '—'}
+   759→                        <span className="text-xs font-normal text-muted-foreground ml-0.5">mmHg</span>
+   760→                      </p>
+   761→                    </div>
+   762→                    <div className="text-center">
+   763→                      <p className="text-xs text-muted-foreground">FC</p>
+   764→                      <p className="text-lg font-bold text-emerald-700">
+   765→                        {lastVitals.heartRate != null ? `${lastVitals.heartRate}` : '—'}
+   766→                        <span className="text-xs font-normal text-muted-foreground ml-0.5">bpm</span>
+   767→                      </p>
+   768→                    </div>
+   769→                    <div className="text-center">
+   770→                      <p className="text-xs text-muted-foreground">SpO2</p>
+   771→                      <p className="text-lg font-bold text-emerald-700">
+   772→                        {lastVitals.oxygenSaturation != null ? `${lastVitals.oxygenSaturation}` : '—'}
+   773→                        <span className="text-xs font-normal text-muted-foreground ml-0.5">%</span>
+   774→                      </p>
+   775→                    </div>
+   776→                    <div className="text-center">
+   777→                      <p className="text-xs text-muted-foreground">FR</p>
+   778→                      <p className="text-lg font-bold text-emerald-700">
+   779→                        {lastVitals.respiratoryRate != null ? `${lastVitals.respiratoryRate}` : '—'}
+   780→                        <span className="text-xs font-normal text-muted-foreground ml-0.5">/min</span>
+   781→                      </p>
+   782→                    </div>
+   783→                  </div>
+   784→                </CardContent>
+   785→              </Card>
+   786→            )}
+   787→
+   788→            {/* Vitals history table */}
+   789→            <Card>
+   790→              <CardHeader className="pb-3">
+   791→                <CardTitle className="text-base flex items-center gap-2">
+   792→                  <Activity className="w-4 h-4 text-emerald-600" />
+   793→                  Historique des constantes ({patient.vitals?.length || 0})
+   794→                </CardTitle>
+   795→              </CardHeader>
+   796→              <CardContent className="p-0">
+   797→                {(!patient.vitals || patient.vitals.length === 0) ? (
+   798→                  <div className="text-center py-12">
+   799→                    <Activity className="w-10 h-10 mx-auto mb-2 text-muted-foreground/30" />
+   800→                    <p className="text-sm text-muted-foreground">Aucune mesure enregistrée</p>
+   801→                  </div>
+   802→                ) : (
+   803→                  <div className="max-h-96 overflow-y-auto overflow-x-auto">
+   804→                    <Table>
+   805→                      <TableHeader>
+   806→                        <TableRow>
+   807→                          <TableHead className="text-xs">Date</TableHead>
+   808→                          <TableHead className="text-xs">Poids</TableHead>
+   809→                          <TableHead className="text-xs hidden sm:table-cell">Taille</TableHead>
+   810→                          <TableHead className="text-xs">Temp.</TableHead>
+   811→                          <TableHead className="text-xs">TA</TableHead>
+   812→                          <TableHead className="text-xs hidden md:table-cell">FC</TableHead>
+   813→                          <TableHead className="text-xs hidden md:table-cell">SpO2</TableHead>
+   814→                          <TableHead className="text-xs hidden lg:table-cell">FR</TableHead>
+   815→                        </TableRow>
+   816→                      </TableHeader>
+   817→                      <TableBody>
+   818→                        {patient.vitals.map((v: any) => (
+   819→                          <TableRow key={v.id}>
+   820→                            <TableCell className="text-xs">{fmtDateTime(v.createdAt)}</TableCell>
+   821→                            <TableCell className="text-xs">{v.weight != null ? `${v.weight} kg` : '—'}</TableCell>
+   822→                            <TableCell className="text-xs hidden sm:table-cell">{v.height != null ? `${v.height} cm` : '—'}</TableCell>
+   823→                            <TableCell className="text-xs">{v.temperature != null ? `${v.temperature} °C` : '—'}</TableCell>
+   824→                            <TableCell className="text-xs">
+   825→                              {v.bloodPressureSystolic != null ? `${v.bloodPressureSystolic}/${v.bloodPressureDiastolic}` : '—'}
+   826→                            </TableCell>
+   827→                            <TableCell className="text-xs hidden md:table-cell">
+   828→                              {v.heartRate != null ? `${v.heartRate} bpm` : '—'}
+   829→                            </TableCell>
+   830→                            <TableCell className="text-xs hidden md:table-cell">
+   831→                              {v.oxygenSaturation != null ? `${v.oxygenSaturation}%` : '—'}
+   832→                            </TableCell>
+   833→                            <TableCell className="text-xs hidden lg:table-cell">
+   834→                              {v.respiratoryRate != null ? `${v.respiratoryRate}/min` : '—'}
+   835→                            </TableCell>
+   836→                          </TableRow>
+   837→                        ))}
+   838→                      </TableBody>
+   839→                    </Table>
+   840→                  </div>
+   841→                )}
+   842→              </CardContent>
+   843→            </Card>
+   844→          </div>
+   845→        )}
+   846→      </div>
+   847→
+   848→      {/* ─── Transfer Dialog ─── */}
+   849→      <Dialog open={transferOpen} onOpenChange={setTransferOpen}>
+   850→        <DialogContent className="sm:max-w-md">
+   851→          <DialogHeader>
+   852→            <DialogTitle className="flex items-center gap-2">
+   853→              <Send className="w-4 h-4 text-emerald-600" />
+   854→              Transférer le dossier
+   855→            </DialogTitle>
+   856→          </DialogHeader>
+   857→          <div className="space-y-4">
+   858→            <div className="space-y-1.5">
+   859→              <Label className="text-xs">Hôpital de destination *</Label>
+   860→              <Select value={transferHospitalId} onValueChange={setTransferHospitalId}>
+   861→                <SelectTrigger className="w-full">
+   862→                  <SelectValue placeholder="Sélectionner un hôpital" />
+   863→                </SelectTrigger>
+   864→                <SelectContent>
+   865→                  {hospitals.map((h: any) => (
+   866→                    <SelectItem key={h.id} value={h.id}>
+   867→                      <div className="flex items-center gap-2">
+   868→                        <Building2 className="w-3.5 h-3.5 text-muted-foreground" />
+   869→                        {h.name} {h.city ? `— ${h.city}` : ''}
+   870→                      </div>
+   871→                    </SelectItem>
+   872→                  ))}
+   873→                </SelectContent>
+   874→              </Select>
+   875→            </div>
+   876→            <div className="space-y-1.5">
+   877→              <Label className="text-xs">Motif du transfert</Label>
+   878→              <Textarea
+   879→                value={transferReason}
+   880→                onChange={(e) => setTransferReason(e.target.value)}
+   881→                placeholder="Raison du transfert du dossier..."
+   882→                rows={3}
+   883→              />
+   884→            </div>
+   885→          </div>
+   886→          <DialogFooter>
+   887→            <Button variant="outline" onClick={() => setTransferOpen(false)}>Annuler</Button>
+   888→            <Button
+   889→              onClick={sendTransfer}
+   890→              disabled={!transferHospitalId || transferSending}
+   891→              className="bg-emerald-700 hover:bg-emerald-800 text-white"
+   892→            >
+   893→              {transferSending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+   894→              Envoyer la demande
+   895→            </Button>
+   896→          </DialogFooter>
+   897→        </DialogContent>
+   898→      </Dialog>
+   899→    </div>
+   900→  )
+   901→}

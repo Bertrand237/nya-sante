@@ -24,7 +24,7 @@ export async function GET(
         },
         prescriptions: {
           include: {
-            consultation: { select: { id: true, createdAt: true } },
+            consultation: { select: { id: true, createdAt: true, diagnosis: true } },
             staff: { select: { id: true, firstName: true, lastName: true } },
             items: true,
           },
@@ -36,6 +36,12 @@ export async function GET(
         vitals: {
           orderBy: { createdAt: 'desc' },
           take: 20,
+        },
+        labRequests: {
+          include: {
+            staff: { select: { id: true, firstName: true, lastName: true } },
+          },
+          orderBy: { createdAt: 'desc' },
         },
       },
     })

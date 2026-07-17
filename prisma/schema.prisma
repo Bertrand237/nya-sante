@@ -42,6 +42,8 @@ model Hospital {
   settings    HospitalSetting[]
   medications Medication[]
   labRequests  LabRequest[]
+  transfersOut  PatientTransfer[] @relation("TransferFromHospital")
+  transfersIn   PatientTransfer[] @relation("TransferToHospital")
 
   @@index([slug])
   @@index([country])
@@ -159,6 +161,8 @@ model Staff {
   headOfDepartments Department[] @relation("DepartmentHead")
   labRequests       LabRequest[]
   auditLogs        AuditLog[]
+  transfersRequested  PatientTransfer[] @relation("TransferRequester")
+  transfersResponded  PatientTransfer[] @relation("TransferResponder")
 
   @@index([hospitalId])
   @@index([departmentId])
@@ -191,22 +195,25 @@ model Patient {
   qrCodeData        String?
   photo             String?
   notes             String?
+  nationalId         String?
   isAlive           Boolean  @default(true)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
-  hospital      Hospital        @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  hospital      Hospital          @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
   appointments  Appointment[]
   consultations Consultation[]
   prescriptions Prescription[]
   invoices      Invoice[]
   vitals        VitalSign[]
   labRequests   LabRequest[]
+  transfersOut  PatientTransfer[] @relation("TransferFrom")
 
   @@unique([hospitalId, folderNumber])
   @@index([hospitalId])
   @@index([phone])
   @@index([lastName])
+  @@index([nationalId])
 }
 
 /* ══════════════════════════════════════════════
@@ -466,6 +473,39 @@ model LabRequest {
   @@index([patientId])
   @@index([staffId])
   @@index([status])
+}
+
+/* ══════════════════════════════════════════════
+   INTER-HOSPITAL PATIENT TRANSFERS
+   ══════════════════════════════════════════════ */
+
+model PatientTransfer {
+  id                String   @id @default(cuid())
+  patientId         String
+  fromHospitalId    String
+  toHospitalId      String
+  patientData       String   // JSON snapshot of patient data at transfer time
+  reason            String?
+  status            String   @default("en_attente") // en_attente, accepte, refuse, annule
+  requestedBy       String   // staff ID who initiated the transfer
+  respondedBy       String?
+  responseNotes     String?
+  requestedAt       DateTime @default(now())
+  respondedAt       DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  patient       Patient  @relation("TransferFrom", fields: [patientId], references: [id], onDelete: Cascade)
+  fromHospital   Hospital @relation("TransferFromHospital", fields: [fromHospitalId], references: [id])
+  toHospital     Hospital @relation("TransferToHospital", fields: [toHospitalId], references: [id])
+  requester      Staff    @relation("TransferRequester", fields: [requestedBy], references: [id])
+  responder      Staff?   @relation("TransferResponder", fields: [respondedBy], references: [id])
+
+  @@index([patientId])
+  @@index([fromHospitalId])
+  @@index([toHospitalId])
+  @@index([status])
+  @@index([createdAt])
 }
 
 /* ══════════════════════════════════════════════
