@@ -192,8 +192,8 @@
 
 /* ── Pulse glow for stats ── */
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(4, 120, 87, 0.2); }
-  50% { box-shadow: 0 0 20px 4px rgba(4, 120, 87, 0.15); }
+  0%, 100% { box-shadow: 0 0 0 0 var(--pulse-glow-color, rgba(4, 120, 87, 0.2)); }
+  50% { box-shadow: 0 0 20px 4px var(--pulse-glow-color, rgba(4, 120, 87, 0.15)); }
 }
 .pulse-glow {
   animation: pulse-glow 3s ease-in-out infinite;
@@ -311,6 +311,105 @@ tbody tr:hover > td {
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
+}
+
+/* ── Dark Mode Utility Classes ── */
+.dark .kpi-emerald { background: oklch(0.22 0.03 155); }
+.dark .kpi-emerald .kpi-icon-bg { background: oklch(0.28 0.06 155); }
+.dark .kpi-emerald .kpi-icon { color: #6ee7b7; }
+.dark .kpi-blue { background: oklch(0.22 0.02 250); }
+.dark .kpi-blue .kpi-icon-bg { background: oklch(0.28 0.05 250); }
+.dark .kpi-blue .kpi-icon { color: #93c5fd; }
+.dark .kpi-orange { background: oklch(0.22 0.03 60); }
+.dark .kpi-orange .kpi-icon-bg { background: oklch(0.28 0.06 60); }
+.dark .kpi-orange .kpi-icon { color: #fdba74; }
+.dark .kpi-teal { background: oklch(0.22 0.03 180); }
+.dark .kpi-teal .kpi-icon-bg { background: oklch(0.28 0.06 180); }
+.dark .kpi-teal .kpi-icon { color: #5eead4; }
+
+/* ── Sidebar Dark Mode ── */
+.dark .sidebar-root {
+  background: oklch(0.13 0.02 155) !important;
+}
+.dark .sidebar-root .sidebar-border {
+  border-color: oklch(0.22 0.02 155) !important;
+}
+.dark .sidebar-root .sidebar-nav-active {
+  background: oklch(0.22 0.04 155);
+  color: white;
+}
+
+/* ── Info Callout Dark Mode ── */
+.dark .info-callout {
+  background: oklch(0.2 0.03 155);
+  border-color: oklch(0.3 0.05 155);
+}
+.dark .info-callout p { color: #a7f3d0; }
+.dark .info-callout .info-icon { color: #6ee7b7; }
+
+/* ── Vitals Card Dark Mode ── */
+.dark .vitals-card {
+  background: oklch(0.2 0.03 155);
+  border-color: oklch(0.3 0.05 155);
+}
+
+/* ── Quick Action Cards Dark Mode ── */
+.dark .qa-emerald {
+  background: oklch(0.22 0.04 155);
+  border-color: oklch(0.3 0.06 155);
+  color: #6ee7b7;
+}
+.dark .qa-emerald:hover { background: oklch(0.28 0.05 155); }
+.dark .qa-blue {
+  background: oklch(0.22 0.03 250);
+  border-color: oklch(0.3 0.05 250);
+  color: #93c5fd;
+}
+.dark .qa-blue:hover { background: oklch(0.28 0.04 250); }
+.dark .qa-amber {
+  background: oklch(0.22 0.03 75);
+  border-color: oklch(0.3 0.06 75);
+  color: #fcd34d;
+}
+.dark .qa-amber:hover { background: oklch(0.28 0.04 75); }
+.dark .qa-teal {
+  background: oklch(0.22 0.03 180);
+  border-color: oklch(0.3 0.05 180);
+  color: #5eead4;
+}
+.dark .qa-teal:hover { background: oklch(0.28 0.04 180); }
+
+/* ── Staggered children animation ── */
+.stagger-children > * {
+  opacity: 0;
+  animation: fade-in-up 0.4s ease-out both;
+}
+.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-children > *:nth-child(2) { animation-delay: 60ms; }
+.stagger-children > *:nth-child(3) { animation-delay: 120ms; }
+.stagger-children > *:nth-child(4) { animation-delay: 180ms; }
+.stagger-children > *:nth-child(5) { animation-delay: 240ms; }
+.stagger-children > *:nth-child(6) { animation-delay: 300ms; }
+
+/* ── Subtle pulse for live indicators ── */
+@keyframes live-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.live-dot {
+  animation: live-dot 2s ease-in-out infinite;
+}
+
+/* ── Glass card for header stats ── */
+.glass-stat {
+  background: oklch(0.97 0.005 155 / 70%);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid oklch(0.92 0.01 155);
+}
+.dark .glass-stat {
+  background: oklch(0.17 0.01 155 / 70%);
+  border-color: oklch(1 0 0 / 8%);
 }
 
 /* ── Print Styles ── */

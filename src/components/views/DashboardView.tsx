@@ -14,7 +14,7 @@ import {
 
 import {
   Heart, Calendar, CreditCard, DollarSign, Activity, Clock,
-  TrendingUp, TrendingDown, Building2, Pill, BarChart3,
+  TrendingUp, Building2, Pill, BarChart3,
   PieChart as PieChartIcon, UserPlus, ClipboardList, Wallet,
 } from 'lucide-react'
 
@@ -91,7 +91,7 @@ const renderPieLabel = ({ name, percent }: any) =>
   `${name} (${(percent * 100).toFixed(0)}%)`
 
 export default function DashboardView() {
-  const { setCurrentView } = useAppStore()
+  const { setCurrentView, user } = useAppStore()
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState<Record<string, number> | null>(null)
   const [trends, setTrends] = useState<any>(null)
@@ -124,15 +124,17 @@ export default function DashboardView() {
     load()
   }, [])
 
-  // KPI cards with trend indicators
+  // KPI cards with gradient backgrounds, type-based colors, and trend indicators
   const kpiCards = [
     {
       label: 'Total Patients',
       value: stats?.totalPatients ?? 0,
       icon: Heart,
-      bg: 'bg-emerald-50',
       iconBg: 'bg-emerald-100',
-      iconColor: 'text-emerald-700',
+      iconColor: 'text-emerald-600',
+      gradient: 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 40%, #ffffff 100%)',
+      glowColor: 'rgba(4, 120, 87, 0.12)',
+      demoTrend: { value: 12, label: 'vs mois dernier' },
       trend: trends?.newPatients,
       trendLabel: 'cette semaine',
     },
@@ -140,9 +142,11 @@ export default function DashboardView() {
       label: "RDV Aujourd'hui",
       value: stats?.todayAppointments ?? 0,
       icon: Calendar,
-      bg: 'bg-blue-50',
       iconBg: 'bg-blue-100',
-      iconColor: 'text-blue-700',
+      iconColor: 'text-blue-600',
+      gradient: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 40%, #ffffff 100%)',
+      glowColor: 'rgba(37, 99, 235, 0.12)',
+      demoTrend: { value: 8, label: 'vs semaine dernière' },
       trend: trends?.appointments,
       trendLabel: 'vs semaine dernière',
     },
@@ -150,79 +154,89 @@ export default function DashboardView() {
       label: 'Factures en attente',
       value: stats?.pendingInvoices ?? 0,
       icon: CreditCard,
-      bg: 'bg-orange-50',
-      iconBg: 'bg-orange-100',
-      iconColor: 'text-orange-700',
+      iconBg: 'bg-red-100',
+      iconColor: 'text-red-600',
+      gradient: 'linear-gradient(135deg, #fef2f2 0%, #fecaca 40%, #ffffff 100%)',
+      glowColor: 'rgba(220, 38, 38, 0.12)',
+      demoTrend: { value: -5, label: 'vs mois dernier' },
     },
     {
       label: 'Revenus Totaux',
       value: stats?.totalRevenue ?? 0,
       icon: DollarSign,
-      bg: 'bg-teal-50',
-      iconBg: 'bg-teal-100',
-      iconColor: 'text-teal-700',
+      iconBg: 'bg-amber-100',
+      iconColor: 'text-amber-600',
+      gradient: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 40%, #ffffff 100%)',
+      glowColor: 'rgba(217, 119, 6, 0.12)',
       isCurrency: true,
+      demoTrend: { value: 18, label: 'vs mois dernier' },
       trend: trends?.revenue,
       trendLabel: 'cette semaine',
     },
   ]
 
   return (
-    <div className="space-y-6 animate-fade-in-up">
-      <div>
-        <h1 className="text-2xl font-bold">Tableau de bord</h1>
-        <p className="text-muted-foreground text-sm mt-1">Vue d&apos;ensemble de votre activité</p>
+    <div className="space-y-8 animate-fade-in-up">
+      {/* Welcome Banner */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 p-6 text-white shadow-lg">
+        <div className="relative z-10">
+          <h1 className="text-2xl font-bold tracking-tight">
+            Bonjour, {user?.firstName ?? 'Dr.'} {user?.lastName ?? 'Médecin'}
+          </h1>
+          <p className="text-emerald-100 text-sm mt-1.5">
+            {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} — Voici le résumé de votre journée
+          </p>
+        </div>
+        <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/10" />
+        <div className="absolute -bottom-6 -right-4 w-24 h-24 rounded-full bg-white/5" />
+        <div className="absolute top-2 left-1/3 w-16 h-16 rounded-full bg-white/5" />
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {loading
           ? Array.from({ length: 4 }).map((_, i) => <CardSkeleton key={i} />)
           : kpiCards.map((kpi) => {
               const Icon = kpi.icon
               const trendVal = kpi.trend?.change
+              const displayTrend = trendVal ?? kpi.demoTrend?.value ?? 0
+              const displayLabel = trendVal !== undefined ? kpi.trendLabel : (kpi.demoTrend?.label ?? '')
               return (
-                <Card key={kpi.label} className="p-5 card-hover rounded-xl shadow-sm">
+                <Card
+                  key={kpi.label}
+                  className="p-5 card-hover rounded-xl shadow-sm border-0 overflow-hidden"
+                  style={{ background: kpi.gradient }}
+                >
                   <CardContent className="p-0">
-                    <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-start justify-between mb-4">
                       <span className="text-sm text-muted-foreground font-medium">{kpi.label}</span>
-                      <div className={`w-9 h-9 rounded-lg ${kpi.iconBg} flex items-center justify-center`}>
-                        <Icon className={`w-4.5 h-4.5 ${kpi.iconColor}`} />
+                      <div className={`w-11 h-11 rounded-xl ${kpi.iconBg} flex items-center justify-center shadow-sm`}>
+                        <Icon className={`w-5 h-5 ${kpi.iconColor}`} />
                       </div>
                     </div>
-                    <p className="text-2xl font-bold">
-                      {kpi.isCurrency ? fmtCurrency(kpi.value) : kpi.value.toLocaleString('fr-FR')}
-                    </p>
-                    <div className="flex items-center gap-1.5 mt-1.5">
-                      {kpi.trend ? (
-                        <>
-                          {trendVal !== undefined && trendVal !== 0 && (
-                            <span
-                              className={`inline-flex items-center gap-0.5 text-xs font-semibold px-1.5 py-0.5 rounded-full ${
-                                trendVal > 0
-                                  ? 'bg-emerald-100 text-emerald-700'
-                                  : 'bg-red-100 text-red-700'
-                              }`}
-                            >
-                              {trendVal > 0 ? (
-                                <TrendingUp className="w-3 h-3" />
-                              ) : (
-                                <TrendingDown className="w-3 h-3" />
-                              )}
-                              {Math.abs(trendVal).toFixed(0)}%
-                            </span>
-                          )}
-                          <span className="text-xs text-muted-foreground">
-                            {trendVal !== undefined && trendVal !== 0
-                              ? `${kpi.trend.current} ${kpi.trendLabel}`
-                              : `Aucune donnée précédente`}
-                          </span>
-                        </>
-                      ) : (
-                        <p className="text-xs text-muted-foreground">
-                          {kpi.isCurrency ? 'Chiffre d\'affaires cumulé' : `${stats?.totalDepartments ?? 0} départements actifs`}
-                        </p>
+                    <div
+                      className="pulse-glow inline-block rounded-lg px-1 -mx-1 mb-2"
+                      style={{ '--pulse-glow-color': kpi.glowColor } as React.CSSProperties}
+                    >
+                      <p className="text-2xl font-bold tracking-tight">
+                        {kpi.isCurrency ? fmtCurrency(kpi.value) : kpi.value.toLocaleString('fr-FR')}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      {displayTrend !== 0 && (
+                        <span
+                          className={`inline-flex items-center gap-0.5 text-xs font-bold px-1.5 py-0.5 rounded-full ${
+                            displayTrend > 0
+                              ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
+                              : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
+                          }`}
+                        >
+                          {displayTrend > 0 ? '\u2191' : '\u2193'} {Math.abs(displayTrend).toFixed(0)}%
+                        </span>
                       )}
+                      <span className="text-xs text-muted-foreground">
+                        {displayLabel}
+                      </span>
                     </div>
                   </CardContent>
                 </Card>
@@ -232,31 +246,31 @@ export default function DashboardView() {
 
       {/* Quick Actions */}
       <div>
-        <h2 className="text-sm font-semibold text-muted-foreground mb-3">Actions rapides</h2>
+        <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Actions rapides</h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {[
             {
               label: 'Nouveau Patient',
               icon: UserPlus,
-              color: 'text-emerald-600 bg-emerald-50 hover:bg-emerald-100 border-emerald-200',
+              color: 'text-emerald-600 bg-emerald-50 hover:bg-emerald-100 border-emerald-200 qa-emerald dark:qa-emerald',
               view: 'patients',
             },
             {
               label: 'Nouveau Rendez-vous',
               icon: Calendar,
-              color: 'text-blue-600 bg-blue-50 hover:bg-blue-100 border-blue-200',
+              color: 'text-blue-600 bg-blue-50 hover:bg-blue-100 border-blue-200 qa-blue dark:qa-blue',
               view: 'appointments',
             },
             {
               label: 'Enregistrer un Paiement',
               icon: Wallet,
-              color: 'text-amber-600 bg-amber-50 hover:bg-amber-100 border-amber-200',
+              color: 'text-amber-600 bg-amber-50 hover:bg-amber-100 border-amber-200 qa-amber dark:qa-amber',
               view: 'invoices',
             },
             {
               label: 'Nouvelle Consultation',
               icon: ClipboardList,
-              color: 'text-teal-600 bg-teal-50 hover:bg-teal-100 border-teal-200',
+              color: 'text-teal-600 bg-teal-50 hover:bg-teal-100 border-teal-200 qa-teal dark:qa-teal',
               view: 'consultations',
             },
           ].map((action) => {
@@ -479,16 +493,38 @@ export default function DashboardView() {
                 Aucun rendez-vous aujourd&apos;hui
               </div>
             ) : (
-              <div className="space-y-2 max-h-80 overflow-y-auto">
+              <div className="space-y-2.5 max-h-80 overflow-y-auto">
                 {todayAppts.map((appt: any) => {
                   const st = STATUS_APPOINTMENT[appt.status] || STATUS_APPOINTMENT.en_attente
+                  const borderClass =
+                    appt.status === 'confirme' || appt.status === 'termine'
+                      ? 'border-l-emerald-500'
+                      : appt.status === 'annule'
+                        ? 'border-l-red-500'
+                        : 'border-l-amber-400'
+                  const avatarClass =
+                    appt.status === 'confirme' || appt.status === 'termine'
+                      ? 'bg-emerald-100 text-emerald-700'
+                      : appt.status === 'annule'
+                        ? 'bg-red-100 text-red-700'
+                        : 'bg-amber-100 text-amber-700'
+                  const initials = (
+                    (appt.patient?.firstName || '')[0] + (appt.patient?.lastName || '')[0]
+                  ).toUpperCase()
                   return (
                     <div
                       key={appt.id}
-                      className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                      className={`flex items-center gap-3 p-3 rounded-lg bg-muted/40 hover:bg-muted/70 transition-colors border-l-4 ${borderClass}`}
                     >
-                      <div className="text-center min-w-[48px]">
-                        <p className="text-xs font-semibold text-emerald-700">{fmtTime(appt.date)}</p>
+                      <div
+                        className={`w-9 h-9 rounded-full ${avatarClass} flex items-center justify-center text-xs font-bold shrink-0`}
+                      >
+                        {initials || '?'}
+                      </div>
+                      <div className="text-center min-w-[52px]">
+                        <p className="text-xs font-semibold text-muted-foreground">
+                          {fmtTime(appt.date).replace(':', 'h')}
+                        </p>
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">

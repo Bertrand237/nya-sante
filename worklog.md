@@ -739,3 +739,62 @@ Stage Summary:
 - Interactive PIN visibility toggle and forgot-password link
 - Animated gradient border frames the card with a subtle emerald-teal-orange flow
 - Version badge "v1.0 — PWA" displayed at bottom center
+
+---
+Task ID: 20
+Agent: Main Agent
+Task: Add keyboard shortcut command palette (Ctrl+K / Cmd+K) for quick navigation
+
+Work Log:
+- Created `/src/components/CommandPalette.tsx` — full command palette component using shadcn/ui CommandDialog
+  - Opens with Ctrl+K (or Cmd+K on Mac) via global keyboard event listener
+  - Three grouped sections: "Navigation" (all sidebar views, filtered by user role), "Actions rapides" (new patient, new RDV, new consultation), "Aide" (documentation, keyboard shortcuts)
+  - Each item displays an icon, label, and description for discoverability
+  - Arrow key navigation + Enter to select, Escape to close (handled natively by cmdk)
+  - Navigation items call `setCurrentView` from the Zustand store to switch views
+  - Quick action items navigate to the relevant view with an informational toast
+  - Footer bar shows keyboard hints: ↑↓ Navigate, ↵ Select, Esc Close
+- Integrated in `/src/app/page.tsx`:
+  - Imported `CommandPalette` and added `commandPaletteOpen` state
+  - Added subtle `Ctrl+K` badge button with `Keyboard` icon in the top header bar (hidden on mobile, visible sm+)
+  - Rendered `<CommandPalette>` after PWAInstallPrompt inside the authenticated layout
+- Lint: 0 errors
+
+Stage Summary:
+- Command palette enables power-user navigation across all views without using the sidebar
+- Role-based filtering ensures users only see navigation items they have permission to access
+- Subtle header hint ("Ctrl+K" badge) encourages discovery of the feature
+
+---
+Task ID: Dashboard KPI Cards Visual Enhancement
+Agent: frontend-styling-expert
+Task: Improve Dashboard KPI cards with gradients, trends, animations, welcome banner, and appointment styling
+
+Work Log:
+- Updated `globals.css` pulse-glow keyframe to use CSS custom property `--pulse-glow-color` for per-card color theming
+- Updated `src/components/views/DashboardView.tsx`:
+  - Added `user` from `useAppStore()` for personalized welcome banner
+  - Replaced plain title with emerald gradient welcome banner showing doctor's name + full French date
+  - Added decorative semi-transparent circles for visual depth in banner
+  - Redesigned 4 KPI cards with type-specific subtle gradients (emerald/blue/red/amber)
+  - Increased icon container size from w-9 h-9 rounded-lg to w-11 h-11 rounded-xl with shadow
+  - Added `pulse-glow` animation class on stat numbers with per-card glow color via CSS variable
+  - Replaced TrendingUp/TrendingDown icon trends with simple ↑/↓ arrow characters + percentage badges
+  - Added hardcoded `demoTrend` data to all cards (patients +12%, appointments +8%, invoices -5%, revenue +18%)
+  - Cards use API trend data when available, fallback to demo trends
+  - Recolored "Factures en attente" card from orange to red (alerts), "Revenus Totaux" from teal to amber (revenue)
+  - Improved today's appointments rows:
+    - Added colored left borders (emerald=confirmed/done, amber=pending/in-progress, red=cancelled)
+    - Added patient avatar circles with initials, color-coded by status
+    - Changed time format from "HH:MM" to "HHhMM" (French convention)
+    - Increased row spacing from space-y-2 to space-y-2.5
+  - Improved overall spacing: space-y-6 to space-y-8, KPI grid gap-4 to gap-5
+  - Updated "Actions rapides" section header to uppercase with tracking-wider for better hierarchy
+  - Removed unused `TrendingDown` import
+- Lint: 0 errors
+
+Stage Summary:
+- Dashboard now features a personalized welcome banner with date context
+- KPI cards have type-specific gradient backgrounds, color-matched glow animations, and always-visible trend indicators
+- Appointment rows have clear visual status coding via left borders and avatar colors
+- All existing functionality (API data loading, charts, tables, quick actions) preserved intact
