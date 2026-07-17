@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import { toast } from 'sonner'
+import { ThemeProvider, useTheme } from 'next-themes'
 import { useAppStore } from '@/lib/store'
 import { getAllowedViews, getWelcomeMessage } from '@/lib/permissions'
 import { Toaster } from '@/components/ui/sonner'
@@ -41,6 +42,8 @@ import {
   Cloud,
   Info,
   Send,
+  Sun,
+  Moon,
 } from 'lucide-react'
 
 const DashboardView = dynamic(() => import('@/components/views/DashboardView'), { loading: () => <div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-4 border-emerald-200 border-t-emerald-600 rounded-full" /></div> })
@@ -58,6 +61,7 @@ const AuditView = dynamic(() => import('@/components/views/AuditView'), { ssr: f
 const SettingsView = dynamic(() => import('@/components/views/SettingsView'), { ssr: false })
 const PlatformsView = dynamic(() => import('@/components/views/PlatformsView'), { ssr: false })
 const TransfersView = dynamic(() => import('@/components/views/TransfersView'), { ssr: false })
+const AdminPanelView = dynamic(() => import('@/components/views/AdminPanelView'), { ssr: false })
 
 const NAV_ITEMS = [
   { key: 'dashboard', label: 'Tableau de bord', icon: LayoutDashboard },
@@ -73,9 +77,30 @@ const NAV_ITEMS = [
   { key: 'labs', label: 'Laboratoire', icon: Microscope },
   { key: 'audit', label: "Journal d'audit", icon: Shield },
   { key: 'transfers', label: 'Transferts', icon: Send },
+  { key: 'admin', label: 'SaaS Admin', icon: Shield },
   { key: 'settings', label: 'Paramètres', icon: Settings },
   { key: 'platforms', label: 'Plateformes', icon: Cloud },
 ]
+
+/* ═══════════════════════════════════════════════════
+   THEME TOGGLE
+   ═══════════════════════════════════════════════════ */
+
+function ThemeToggle() {
+  const { theme, setTheme } = useTheme()
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+      className="h-9 w-9"
+      title={theme === 'dark' ? 'Mode clair' : 'Mode sombre'}
+    >
+      <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+      <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+    </Button>
+  )
+}
 
 /* ═══════════════════════════════════════════════════
    LOGIN SCREEN
@@ -304,7 +329,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
             const badge = getBadge(item.key)
             return (
               <div key={item.key}>
-                {(item.key === 'settings' || item.key === 'platforms') && (
+                {(item.key === 'admin' || item.key === 'settings' || item.key === 'platforms') && (
                   <div className="my-2 border-t border-emerald-700/50" />
                 )}
                 <button
@@ -362,11 +387,6 @@ export default function HomePage() {
   const { isAuthenticated, currentView } = useAppStore()
   const [mobileOpen, setMobileOpen] = useState(false)
 
-  // If not authenticated, show login
-  if (!isAuthenticated) {
-    return <LoginScreen />
-  }
-
   const viewTitle = NAV_ITEMS.find((n) => n.key === currentView)?.label || 'Tableau de bord'
 
   const renderView = () => {
@@ -384,6 +404,7 @@ export default function HomePage() {
       case 'labs': return <LaboView />
       case 'audit': return <AuditView />
       case 'transfers': return <TransfersView />
+      case 'admin': return <AdminPanelView />
       case 'settings': return <SettingsView />
       case 'platforms': return <PlatformsView />
       default: return <DashboardView />
@@ -391,45 +412,52 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen flex bg-background">
-      {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex lg:w-[260px] lg:shrink-0 lg:flex-col fixed inset-y-0 left-0 z-30">
-        <SidebarContent />
-      </aside>
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+      {!isAuthenticated ? <LoginScreen /> : (
+        <div className="min-h-screen flex bg-background">
+          {/* Desktop Sidebar */}
+          <aside className="hidden lg:flex lg:w-[260px] lg:shrink-0 lg:flex-col fixed inset-y-0 left-0 z-30">
+            <SidebarContent />
+          </aside>
 
-      {/* Mobile Sidebar (Sheet) */}
-      <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-        <SheetContent side="left" className="w-[280px] p-0">
-          <SheetTitle className="sr-only">Navigation</SheetTitle>
-          <SidebarContent onClose={() => setMobileOpen(false)} />
-        </SheetContent>
-      </Sheet>
+          {/* Mobile Sidebar (Sheet) */}
+          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+            <SheetContent side="left" className="w-[280px] p-0">
+              <SheetTitle className="sr-only">Navigation</SheetTitle>
+              <SidebarContent onClose={() => setMobileOpen(false)} />
+            </SheetContent>
+          </Sheet>
 
-      {/* Main Content */}
-      <main className="flex-1 lg:ml-[260px] min-h-screen flex flex-col">
-        {/* Top Bar */}
-        <header className="sticky top-0 z-20 bg-background/80 backdrop-blur-sm border-b px-4 sm:px-6 py-3">
-          <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="lg:hidden"
-              onClick={() => setMobileOpen(true)}
-            >
-              <Menu className="w-5 h-5" />
-            </Button>
-            <h2 className="text-lg font-semibold">{viewTitle}</h2>
-          </div>
-        </header>
+          {/* Main Content */}
+          <main className="flex-1 lg:ml-[260px] min-h-screen flex flex-col">
+            {/* Top Bar */}
+            <header className="sticky top-0 z-20 bg-background/80 backdrop-blur-sm border-b px-4 sm:px-6 py-3">
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="lg:hidden"
+                  onClick={() => setMobileOpen(true)}
+                >
+                  <Menu className="w-5 h-5" />
+                </Button>
+                <h2 className="text-lg font-semibold">{viewTitle}</h2>
+                <div className="ml-auto flex items-center gap-2">
+                  <ThemeToggle />
+                </div>
+              </div>
+            </header>
 
-        {/* Content Area */}
-        <div className="flex-1 p-4 sm:p-6">
-          {renderView()}
+            {/* Content Area */}
+            <div className="flex-1 p-4 sm:p-6">
+              {renderView()}
+            </div>
+          </main>
+
+          {/* Sonner Toaster */}
+          <Toaster position="top-right" richColors closeButton />
         </div>
-      </main>
-
-      {/* Sonner Toaster */}
-      <Toaster position="top-right" richColors closeButton />
-    </div>
+      )}
+    </ThemeProvider>
   )
 }

@@ -18,6 +18,8 @@ export async function GET() {
         address: true,
         phone: true,
         type: true,
+        subscriptionEndsAt: true,
+        isActive: true,
       },
       orderBy: { name: 'asc' },
     })

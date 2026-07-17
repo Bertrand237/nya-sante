@@ -26,6 +26,7 @@ model Hospital {
   ownerPhone  String?
   ownerEmail  String?
   isActive    Boolean  @default(true)
+  subscriptionEndsAt DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -44,9 +45,11 @@ model Hospital {
   labRequests  LabRequest[]
   transfersOut  PatientTransfer[] @relation("TransferFromHospital")
   transfersIn   PatientTransfer[] @relation("TransferToHospital")
+  subscriptions  Subscription[]
 
   @@index([slug])
   @@index([country])
+  @@index([isActive])
 }
 
 model HospitalSetting {
@@ -163,6 +166,7 @@ model Staff {
   auditLogs        AuditLog[]
   transfersRequested  PatientTransfer[] @relation("TransferRequester")
   transfersResponded  PatientTransfer[] @relation("TransferResponder")
+  subscriptionsValidated Subscription[] @relation("SubscriptionValidator")
 
   @@index([hospitalId])
   @@index([departmentId])
@@ -473,6 +477,30 @@ model LabRequest {
   @@index([patientId])
   @@index([staffId])
   @@index([status])
+}
+
+/* ══════════════════════════════════════════════
+   SUBSCRIPTIONS (SaaS — Manual validation)
+   ══════════════════════════════════════════════ */
+
+model Subscription {
+  id              String   @id @default(cuid())
+  hospitalId      String
+  durationMonths  Int      // 1 to 12
+  startDate       DateTime @default(now())
+  endDate         DateTime
+  status          String   @default("actif") // actif, expire
+  validatedBy      String?  // super_admin staff ID who validated
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  hospital  Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  validator Staff?   @relation("SubscriptionValidator", fields: [validatedBy], references: [id])
+
+  @@index([hospitalId])
+  @@index([status])
+  @@index([endDate])
 }
 
 /* ══════════════════════════════════════════════
